@@ -1,0 +1,156 @@
+00:44:30 **** Incremental Build of configuration Debug for project GPIO ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Inc/MCAL/RCC/RCC_PROG.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Inc/MCAL/RCC/RCC_PROG.d" -MT"Core/Inc/MCAL/RCC/RCC_PROG.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Inc/MCAL/RCC/RCC_PROG.o"
+arm-none-eabi-gcc "../Core/Inc/MCAL/GPIO/GPIO_PROG.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Inc/MCAL/GPIO/GPIO_PROG.d" -MT"Core/Inc/MCAL/GPIO/GPIO_PROG.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Inc/MCAL/GPIO/GPIO_PROG.o"
+In file included from ../Core/Src/main.c:4:
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:30:37: error: unknown type name 'uint8'; did you mean 'int'?
+   30 | void RCC_EnableClock(RCC_Bus_t bus, uint8 perId);
+      |                                     ^~~~~
+      |                                     int
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:31:38: error: unknown type name 'uint8'; did you mean 'int'?
+   31 | void RCC_DisableClock(RCC_Bus_t bus, uint8 perId);
+      |                                      ^~~~~
+      |                                      int
+In file included from ../Core/Src/main.c:5:
+../Core/Inc/MCAL/GPIO/GPIO_INTERFACE.h:14:1: error: unknown type name 'Error_Value'
+   14 | Error_Value GPIO_readpin(PORTS port , PINS pin) ;
+      | ^~~~~~~~~~~
+../Core/Src/main.c:8:1: warning: data definition has no type or storage class
+    8 | RCC_Init();
+      | ^~~~~~~~
+../Core/Src/main.c:8:1: warning: type defaults to 'int' in declaration of 'RCC_Init' [-Wimplicit-int]
+../Core/Src/main.c:8:1: error: conflicting types for 'RCC_Init'; have 'int()'
+In file included from ../Core/Src/main.c:4:
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:27:6: note: previous declaration of 'RCC_Init' with type 'void(void)'
+   27 | void RCC_Init(void);
+      |      ^~~~~~~~
+In file included from ../Core/Inc/MCAL/RCC/RCC_PROG.c:12:
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:30:37: error: unknown type name 'uint8'; did you mean 'int'?
+   30 | void RCC_EnableClock(RCC_Bus_t bus, uint8 perId);
+      |                                     ^~~~~
+      |                                     int
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:31:38: error: unknown type name 'uint8'; did you mean 'int'?
+   31 | void RCC_DisableClock(RCC_Bus_t bus, uint8 perId);
+      |                                      ^~~~~
+      |                                      int
+make: *** Waiting for unfinished jobs....
+In file included from ../Core/Inc/MCAL/RCC/RCC_PROG.c:7:
+../Core/Inc/MCAL/RCC/RCC_PROG.c: In function 'RCC_Init':
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:16:37: error: unknown type name 'uint32'
+   16 | #define RCC_CR          (*(volatile uint32 *)(RCC_BASE + 0x00))   // Clock control register
+      |                                     ^~~~~~
+../Core/Inc/LIBS/BIT_MATH.h:12:29: note: in definition of macro 'SET_BIT'
+   12 | #define SET_BIT(REG,BIT)  ( REG |=  (1 << BIT))
+      |                             ^~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:19:13: note: in expansion of macro 'RCC_CR'
+   19 |     SET_BIT(RCC_CR, 16);          // HSEON
+      |             ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:16:37: error: unknown type name 'uint32'
+   16 | #define RCC_CR          (*(volatile uint32 *)(RCC_BASE + 0x00))   // Clock control register
+      |                                     ^~~~~~
+../Core/Inc/LIBS/BIT_MATH.h:18:29: note: in definition of macro 'GET_BIT'
+   18 | #define GET_BIT(REG,BIT)  ((REG >> BIT) & 0x01U)
+      |                             ^~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:20:21: note: in expansion of macro 'RCC_CR'
+   20 |     while (!GET_BIT(RCC_CR, 17)); // Wait HSERDY
+      |                     ^~~~~~
+In file included from ../Core/Inc/MCAL/RCC/RCC_PROG.c:10:
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:45:5: note: in expansion of macro 'RCC_CFGR'
+   45 |     RCC_CFGR &= ~(0xFU << 4);
+      |     ^~~~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:67:5: note: in expansion of macro 'RCC_CFGR'
+   67 |     RCC_CFGR &= ~(0x7U << 8);
+      |     ^~~~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:70:5: note: in expansion of macro 'RCC_CFGR'
+   70 |     RCC_CFGR |= (0x4U << 8);
+      |     ^~~~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:80:5: note: in expansion of macro 'RCC_CFGR'
+   80 |     RCC_CFGR &= ~(0x7U << 11);
+      |     ^~~~~~~~
+In file included from ../Core/Inc/MCAL/GPIO/GPIO_PROG.c:9:
+../Core/Inc/MCAL/GPIO/GPIO_INTERFACE.h:14:1: error: unknown type name 'Error_Value'
+   14 | Error_Value GPIO_readpin(PORTS port , PINS pin) ;
+      | ^~~~~~~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:93:5: note: in expansion of macro 'RCC_CFGR'
+   93 |     RCC_CFGR &= ~(0x3U << 0);
+      |     ^~~~~~~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c: In function 'GPIO_SetPinDir':
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:94:5: note: in expansion of macro 'RCC_CFGR'
+   94 |     RCC_CFGR |= (RCC_SYSCLK_SOURCE & 0x3U);
+      |     ^~~~~~~~
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:96:14: note: in expansion of macro 'RCC_CFGR'
+   96 |     while (((RCC_CFGR >> 2) & 0x3U) != RCC_SYSCLK_SOURCE);
+      |              ^~~~~~~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:16:24: error: unknown type name 'uint32'
+   16 |            (*(volatile uint32*) (GPIOA_BASE + (0X400 * port) + GPIOX_CRL )) |= (dir << (pin*4)) ;
+      |                        ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c: At top level:
+../Core/Inc/MCAL/RCC/RCC_PROG.c:100:37: error: unknown type name 'uint8'; did you mean 'int'?
+  100 | void RCC_EnableClock(RCC_Bus_t bus, uint8 perId)
+      |                                     ^~~~~
+      |                                     int
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:21:32: error: unknown type name 'uint32'
+   21 |                    (*(volatile uint32*) (GPIOA_BASE + (0X400 * port) + GPIOX_CRH )) |= (dir << ((pin-8)*4)) ;
+      |                                ^~~~~~
+../Core/Inc/MCAL/RCC/RCC_PROG.c:112:38: error: unknown type name 'uint8'; did you mean 'int'?
+  112 | void RCC_DisableClock(RCC_Bus_t bus, uint8 perId)
+      |                                      ^~~~~
+      |                                      int
+In file included from ../Core/Inc/MCAL/GPIO/GPIO_PROG.c:6:
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c: In function 'GPIO_WritePin':
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:31:29: error: unknown type name 'uint32'
+   31 |         SET_BIT((*(volatile uint32*) (GPIOA_BASE + (0X400 * port) + GPIOX_ODR )), pin) ;
+      |                             ^~~~~~
+../Core/Inc/LIBS/BIT_MATH.h:12:29: note: in definition of macro 'SET_BIT'
+   12 | #define SET_BIT(REG,BIT)  ( REG |=  (1 << BIT))
+      |                             ^~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:33:29: error: unknown type name 'uint32'
+   33 |         CLR_BIT((*(volatile uint32*) (GPIOA_BASE + (0X400 * port) + GPIOX_ODR )),pin);
+      |                             ^~~~~~
+../Core/Inc/LIBS/BIT_MATH.h:14:29: note: in definition of macro 'CLR_BIT'
+   14 | #define CLR_BIT(REG,BIT)  ( REG &= ~(1 << BIT))
+      |                             ^~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c: At top level:
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:37:7: error: conflicting types for 'GPIO_readpin'; have 'VALUE(PORTS,  PINS)'
+   37 | VALUE GPIO_readpin(PORTS port , PINS pin)
+      |       ^~~~~~~~~~~~
+In file included from ../Core/Inc/MCAL/GPIO/GPIO_PROG.c:9:
+../Core/Inc/MCAL/GPIO/GPIO_INTERFACE.h:14:13: note: previous declaration of 'GPIO_readpin' with type 'int(PORTS,  PINS)'
+   14 | Error_Value GPIO_readpin(PORTS port , PINS pin) ;
+      |             ^~~~~~~~~~~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c: In function 'GPIO_readpin':
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:39:35: error: unknown type name 'uint32'
+   39 |          return  ( (  (*(volatile uint32*) (GPIOA_BASE + (0X400 * port) + GPIOX_IDR )) >> pin ) & 1 ) ;
+      |                                   ^~~~~~
+../Core/Inc/MCAL/GPIO/GPIO_PROG.c:41:1: warning: control reaches end of non-void function [-Wreturn-type]
+   41 | }
+      | ^
+make: *** [Core/Inc/MCAL/RCC/subdir.mk:19: Core/Inc/MCAL/RCC/RCC_PROG.o] Error 1
+make: *** [Core/Inc/MCAL/GPIO/subdir.mk:19: Core/Inc/MCAL/GPIO/GPIO_PROG.o] Error 1
+"make -j12 all" terminated with exit code 2. Build might be incomplete.
+
+00:44:31 Build Failed. 28 errors, 3 warnings. (took 620ms)
+

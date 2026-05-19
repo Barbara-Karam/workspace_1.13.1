@@ -1,0 +1,98 @@
+#include "imu.h"
+#include "i2c.h"
+
+#define I2C_TIMEOUT  10  // ms
+
+// Private helpers
+static HAL_StatusTypeDef write_reg(uint8_t reg, uint8_t val)
+{
+    uint8_t buf[2] = {reg, val};
+    return HAL_I2C_Master_Transmit(
+        &hi2c1, MPU6050_ADDR, buf, 2, I2C_TIMEOUT);
+}
+
+static HAL_StatusTypeDef read_reg(uint8_t reg,
+                                   uint8_t *buf,
+                                   uint16_t len)
+{
+    HAL_StatusTypeDef ret;
+    ret = HAL_I2C_Master_Transmit(
+        &hi2c1, MPU6050_ADDR, &reg, 1, I2C_TIMEOUT);
+    if (ret != HAL_OK) return ret;
+    return HAL_I2C_Master_Receive(
+        &hi2c1, MPU6050_ADDR, buf, len, I2C_TIMEOUT);
+}
+
+// Check WHO_AM_I register
+bool IMU_IsConnected(void)
+{
+    uint8_t who_am_i = 0;
+    if (read_reg(MPU6050_WHO_AM_I, &who_am_i, 1) != HAL_OK)
+        return false;
+    return (who_am_i == 0x68);
+}
+
+// Init MPU6050
+HAL_StatusTypeDef IMU_Init(void)
+{
+    HAL_StatusTypeDef ret;
+
+    // Wake up device (clear sleep bit)
+    ret = write_reg(MPU6050_PWR_MGMT_1, 0x00);
+    if (ret != HAL_OK) return ret;
+    HAL_Delay(100);
+
+    // Sample rate = 1kHz / (1 + 7) = 125Hz
+    ret = write_reg(MPU6050_SMPLRT_DIV, 0x07);
+    if (ret != HAL_OK) return ret;
+
+    // DLPF config = 3 (44Hz bandwidth)
+    ret = write_reg(MPU6050_CONFIG, 0x03);
+    if (ret != HAL_OK) return ret;
+
+    // Gyro range = ±250 deg/s
+    ret = write_reg(MPU6050_GYRO_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+
+    // Accel range = ±2g
+    ret = write_reg(MPU6050_ACCEL_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+
+    return HAL_OK;
+}
+
+// Read all sensor data
+HAL_StatusTypeDef IMU_Read(IMUData_t *data)
+{
+    uint8_t buf[14];
+    HAL_StatusTypeDef ret;
+
+    // Read 14 bytes starting from ACCEL_XOUT_H
+    // Order: AX(2) AY(2) AZ(2) TEMP(2) GX(2) GY(2) GZ(2)
+    ret = read_reg(MPU6050_ACCEL_XOUT_H, buf, 14);
+    if (ret != HAL_OK) {
+        data->valid = false;
+        return ret;
+    }
+
+    // Combine high and low bytes
+    int16_t raw_ax = (int16_t)((buf[0]  << 8) | buf[1]);
+    int16_t raw_ay = (int16_t)((buf[2]  << 8) | buf[3]);
+    int16_t raw_az = (int16_t)((buf[4]  << 8) | buf[5]);
+    int16_t raw_t  = (int16_t)((buf[6]  << 8) | buf[7]);
+    int16_t raw_gx = (int16_t)((buf[8]  << 8) | buf[9]);
+    int16_t raw_gy = (int16_t)((buf[10] << 8) | buf[11]);
+    int16_t raw_gz = (int16_t)((buf[12] << 8) | buf[13]);
+
+    // Convert to physical units
+    data->accel_x = (raw_ax / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_y = (raw_ay / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_z = (raw_az / ACCEL_SCALE_2G) * 9.81f;
+    data->gyro_x  = raw_gx / GYRO_SCALE_250DPS;
+    data->gyro_y  = raw_gy / GYRO_SCALE_250DPS;
+    data->gyro_z  = raw_gz / GYRO_SCALE_250DPS;
+    data->temp_c  = (raw_t / 340.0f) + 36.53f;
+    data->valid   = true;
+
+    return HAL_OK;
+}

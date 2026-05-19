@@ -1,0 +1,22 @@
+22:10:32 **** Build of configuration Debug for project first_grad_trial ****
+make -j12 all 
+arm-none-eabi-gcc -o "first_grad_trial.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\first_grad_trial\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="first_grad_trial.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: first_grad_trial.elf
+ 
+arm-none-eabi-size  first_grad_trial.elf 
+arm-none-eabi-objdump -h -S first_grad_trial.elf  > "first_grad_trial.list"
+arm-none-eabi-objcopy  -O ihex first_grad_trial.elf  "first_grad_trial.hex"
+   text	   data	    bss	    dec	    hex	filename
+   4584	     12	   1572	   6168	   1818	first_grad_trial.elf
+arm-none-eabi-objcopy  -O binary first_grad_trial.elf  "first_grad_trial.bin"
+Finished building: default.size.stdout
+ 
+Finished building: first_grad_trial.list
+ 
+Finished building: first_grad_trial.hex
+Finished building: first_grad_trial.bin
+ 
+ 
+
+22:10:33 Build Finished. 0 errors, 0 warnings. (took 786ms)
+

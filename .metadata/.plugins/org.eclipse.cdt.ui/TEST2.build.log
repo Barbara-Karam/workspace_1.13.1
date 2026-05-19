@@ -1,0 +1,208 @@
+15:39:11 **** Build of configuration Debug for project TEST2 ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I../Core/LIB -I../Core/MCAL -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/MCAL/NVIC/NVIC_program.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I../Core/LIB -I../Core/MCAL -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/MCAL/NVIC/NVIC_program.d" -MT"Core/MCAL/NVIC/NVIC_program.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/MCAL/NVIC/NVIC_program.o"
+arm-none-eabi-gcc "../Core/MCAL/EXTI/program.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I../Core/LIB -I../Core/MCAL -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/MCAL/EXTI/program.d" -MT"Core/MCAL/EXTI/program.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/MCAL/EXTI/program.o"
+arm-none-eabi-gcc "../Core/MCAL/DMA/program.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I../Core/LIB -I../Core/MCAL -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/MCAL/DMA/program.d" -MT"Core/MCAL/DMA/program.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/MCAL/DMA/program.o"
+arm-none-eabi-gcc "../Core/MCAL/AFIO/AFIO_PROGRAM.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -I../Core/LIB -I../Core/MCAL -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/MCAL/AFIO/AFIO_PROGRAM.d" -MT"Core/MCAL/AFIO/AFIO_PROGRAM.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/MCAL/AFIO/AFIO_PROGRAM.o"
+In file included from ../Core/MCAL/DMA/program.c:11:
+../Core/MCAL/DMA/DMA_INTERFACE.h:55:32: error: unknown type name 'u8'
+   55 | void MDMA_VidSetConfiguration( u8 Copy_u8Channel , u8 Copy_u8Direction , u8 Copy_u8DMAMode , u8 Copy_u8PINC ,
+      |                                ^~
+../Core/MCAL/DMA/DMA_INTERFACE.h:55:52: error: unknown type name 'u8'
+   55 | void MDMA_VidSetConfiguration( u8 Copy_u8Channel , u8 Copy_u8Direction , u8 Copy_u8DMAMode , u8 Copy_u8PINC ,
+      |                                                    ^~
+../Core/MCAL/DMA/DMA_INTERFACE.h:55:74: error: unknown type name 'u8'
+   55 | void MDMA_VidSetConfiguration( u8 Copy_u8Channel , u8 Copy_u8Direction , u8 Copy_u8DMAMode , u8 Copy_u8PINC ,
+      |                                                                          ^~
+../Core/MCAL/EXTI/program.c: In function 'EXTI0_IRQHandler':
+../Core/MCAL/DMA/DMA_INTERFACE.h:55:94: error: unknown type name 'u8'
+   55 | void MDMA_VidSetConfiguration( u8 Copy_u8Channel , u8 Copy_u8Direction , u8 Copy_u8DMAMode , u8 Copy_u8PINC ,
+      |                                                                                              ^~
+../Core/MCAL/EXTI/program.c:88:9: error: 'EXTI_CallBack_Pf' undeclared (first use in this function); did you mean 'EXTI_CallBack_pf'?
+   88 |         EXTI_CallBack_Pf[0]();
+      |         ^~~~~~~~~~~~~~~~
+      |         EXTI_CallBack_pf
+../Core/MCAL/DMA/DMA_INTERFACE.h:56:17: error: unknown type name 'u8'
+   56 |                 u8 Copy_u8MINC , u8 Copy_MEMSize , u8 Copy_u8PERSize , u8 Copy_u8ChannelPriority );
+      |                 ^~
+../Core/MCAL/EXTI/program.c:88:9: note: each undeclared identifier is reported only once for each function it appears in
+../Core/MCAL/DMA/DMA_INTERFACE.h:56:34: error: unknown type name 'u8'
+   56 |                 u8 Copy_u8MINC , u8 Copy_MEMSize , u8 Copy_u8PERSize , u8 Copy_u8ChannelPriority );
+      |                                  ^~
+../Core/MCAL/EXTI/program.c:89:34: error: 'EXTI_LINE0' undeclared (first use in this function); did you mean 'EXTILine'?
+   89 |         EXTI_VidClearPendingFlag(EXTI_LINE0);
+      |                                  ^~~~~~~~~~
+      |                                  EXTILine
+../Core/MCAL/DMA/DMA_INTERFACE.h:56:52: error: unknown type name 'u8'
+   56 |                 u8 Copy_u8MINC , u8 Copy_MEMSize , u8 Copy_u8PERSize , u8 Copy_u8ChannelPriority );
+      |                                                    ^~
+../Core/MCAL/DMA/DMA_INTERFACE.h:56:72: error: unknown type name 'u8'
+   56 |                 u8 Copy_u8MINC , u8 Copy_MEMSize , u8 Copy_u8PERSize , u8 Copy_u8ChannelPriority );
+      |                                                                        ^~
+../Core/MCAL/DMA/DMA_INTERFACE.h:58:25: error: unknown type name 'u8'
+   58 | void MDMA_VidDMAEnable( u8 Copy_u8Channel );
+      |                         ^~
+../Core/MCAL/DMA/DMA_INTERFACE.h:60:26: error: unknown type name 'u8'
+   60 | void MDMA_VidDMADisable( u8 Copy_u8Channel );
+      |                          ^~
+In file included from ../Core/Src/main.c:14:
+../Core/MCAL/EXTI/EXTI_interface.h:20:9: error: redeclaration of enumerator 'Line1'
+   20 |         Line1,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:62:30: error: unknown type name 'u8'
+   62 | void MDMA_VidInerruptEnable( u8 Copy_u8Channel , u8 Copy_u8INTSource );
+      |                              ^~
+In file included from ../Core/Src/main.c:12:
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:13:9: note: previous definition of 'Line1' with type 'enum <anonymous>'
+   13 |         Line1,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:62:50: error: unknown type name 'u8'
+   62 | void MDMA_VidInerruptEnable( u8 Copy_u8Channel , u8 Copy_u8INTSource );
+      |                                                  ^~
+../Core/MCAL/EXTI/EXTI_interface.h:21:9: error: redeclaration of enumerator 'Line2'
+   21 |         Line2,
+      |         ^~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:14:9: note: previous definition of 'Line2' with type 'enum <anonymous>'
+   14 |         Line2,
+      |         ^~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:22:9: error: redeclaration of enumerator 'Line3'
+   22 |         Line3,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:64:26: error: unknown type name 'u8'
+   64 | void MDMA_VidSetAddress( u8 Copy_u8Channel , u32 * PeripheralAddress , u32 * MemoryAddress , u16 Copy_u16NDT );
+      |                          ^~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:15:9: note: previous definition of 'Line3' with type 'enum <anonymous>'
+   15 |         Line3,
+      |         ^~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:23:9: error: redeclaration of enumerator 'Line4'
+   23 |         Line4,
+      |         ^~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:16:9: note: previous definition of 'Line4' with type 'enum <anonymous>'
+   16 |         Line4,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:64:46: error: unknown type name 'u32'; did you mean 'f32'?
+   64 | void MDMA_VidSetAddress( u8 Copy_u8Channel , u32 * PeripheralAddress , u32 * MemoryAddress , u16 Copy_u16NDT );
+      |                                              ^~~
+      |                                              f32
+make: *** [Core/MCAL/EXTI/subdir.mk:19: Core/MCAL/EXTI/program.o] Error 1
+../Core/MCAL/EXTI/EXTI_interface.h:24:9: error: redeclaration of enumerator 'Line5'
+   24 |         Line5,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:64:72: error: unknown type name 'u32'; did you mean 'f32'?
+   64 | void MDMA_VidSetAddress( u8 Copy_u8Channel , u32 * PeripheralAddress , u32 * MemoryAddress , u16 Copy_u16NDT );
+      |                                                                        ^~~
+      |                                                                        f32
+make: *** Waiting for unfinished jobs....
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:17:9: note: previous definition of 'Line5' with type 'enum <anonymous>'
+   17 |         Line5,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:64:94: error: unknown type name 'u16'
+   64 | void MDMA_VidSetAddress( u8 Copy_u8Channel , u32 * PeripheralAddress , u32 * MemoryAddress , u16 Copy_u16NDT );
+      |                                                                                              ^~~
+../Core/MCAL/EXTI/EXTI_interface.h:25:9: error: redeclaration of enumerator 'Line6'
+   25 |         Line6,
+      |         ^~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:18:9: note: previous definition of 'Line6' with type 'enum <anonymous>'
+   18 |         Line6,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:66:25: error: unknown type name 'u8'
+   66 | void MDMA_VidClearFlag( u8 Copy_u8Channel , u8 Copy_u8Flag );
+      |                         ^~
+../Core/MCAL/EXTI/EXTI_interface.h:26:9: error: redeclaration of enumerator 'Line7'
+   26 |         Line7,
+      |         ^~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:19:9: note: previous definition of 'Line7' with type 'enum <anonymous>'
+   19 |         Line7,
+      |         ^~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:27:9: error: redeclaration of enumerator 'Line8'
+   27 |         Line8,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:66:45: error: unknown type name 'u8'
+   66 | void MDMA_VidClearFlag( u8 Copy_u8Channel , u8 Copy_u8Flag );
+      |                                             ^~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:20:9: note: previous definition of 'Line8' with type 'enum <anonymous>'
+   20 |         Line8,
+      |         ^~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:28:9: error: redeclaration of enumerator 'Line9'
+   28 |         Line9,
+      |         ^~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:21:9: note: previous definition of 'Line9' with type 'enum <anonymous>'
+   21 |         Line9,
+      |         ^~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:68:1: error: unknown type name 'u8'
+   68 | u8   MDMA_u8GetFlag( u8 Copy_u8Channel , u8 Copy_u8Flag );
+      | ^~
+../Core/MCAL/EXTI/EXTI_interface.h:29:9: error: redeclaration of enumerator 'Line10'
+   29 |         Line10,
+      |         ^~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:22:9: note: previous definition of 'Line10' with type 'enum <anonymous>'
+   22 |         Line10,
+      |         ^~~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:30:9: error: redeclaration of enumerator 'Line11'
+   30 |         Line11,
+      |         ^~~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:68:22: error: unknown type name 'u8'
+   68 | u8   MDMA_u8GetFlag( u8 Copy_u8Channel , u8 Copy_u8Flag );
+      |                      ^~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:23:9: note: previous definition of 'Line11' with type 'enum <anonymous>'
+   23 |         Line11,
+      |         ^~~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:31:9: error: redeclaration of enumerator 'Line12'
+   31 |         Line12,
+      |         ^~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:24:9: note: previous definition of 'Line12' with type 'enum <anonymous>'
+   24 |         Line12,
+      |         ^~~~~~
+../Core/MCAL/DMA/DMA_INTERFACE.h:68:42: error: unknown type name 'u8'
+   68 | u8   MDMA_u8GetFlag( u8 Copy_u8Channel , u8 Copy_u8Flag );
+      |                                          ^~
+../Core/MCAL/EXTI/EXTI_interface.h:32:9: error: redeclaration of enumerator 'Line13'
+   32 |         Line13,
+      |         ^~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:25:9: note: previous definition of 'Line13' with type 'enum <anonymous>'
+   25 |         Line13,
+      |         ^~~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:33:9: error: redeclaration of enumerator 'Line14'
+   33 |         Line14,
+      |         ^~~~~~
+../Core/MCAL/DMA/program.c:12:10: fatal error: DMA_REG.h: No such file or directory
+   12 | #include "DMA_REG.h"
+      |          ^~~~~~~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:26:9: note: previous definition of 'Line14' with type 'enum <anonymous>'
+   26 |         Line14,
+      |         ^~~~~~
+../Core/MCAL/EXTI/EXTI_interface.h:34:9: error: redeclaration of enumerator 'Line15'
+   34 |         Line15,
+      |         ^~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:27:9: note: previous definition of 'Line15' with type 'enum <anonymous>'
+   27 |         Line15,
+      |         ^~~~~~
+compilation terminated.
+../Core/MCAL/EXTI/EXTI_interface.h:36:2: error: conflicting types for 'EXTILine'; have 'enum <anonymous>'
+   36 | }EXTILine;
+      |  ^~~~~~~~
+../Core/MCAL/AFIO/AFIO_INTERFACE.h:29:2: note: previous declaration of 'EXTILine' with type 'EXTILine'
+   29 | }EXTILine;
+      |  ^~~~~~~~
+../Core/Src/main.c: In function 'Led_toggle':
+../Core/Src/main.c:20:8: warning: implicit declaration of function 'MGPIO_u8GetPinValue' [-Wimplicit-function-declaration]
+   20 |     if(MGPIO_u8GetPinValue(GPIOC , PIN13) == HIGH)
+      |        ^~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:20:28: error: 'GPIOC' undeclared (first use in this function)
+   20 |     if(MGPIO_u8GetPinValue(GPIOC , PIN13) == HIGH)
+      |                            ^~~~~
+../Core/Src/main.c:20:28: note: each undeclared identifier is reported only once for each function it appears in
+../Core/Src/main.c:22:9: warning: implicit declaration of function 'MGPIO_VidSetPinValue' [-Wimplicit-function-declaration]
+   22 |         MGPIO_VidSetPinValue(GPIOC , PIN13, LOW);
+      |         ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:50:5: warning: implicit declaration of function '__enable_irq' [-Wimplicit-function-declaration]
+   50 |     __enable_irq();
+      |     ^~~~~~~~~~~~
+make: *** [Core/MCAL/DMA/subdir.mk:19: Core/MCAL/DMA/program.o] Error 1
+make: *** [Core/Src/subdir.mk:34: Core/Src/main.o] Error 1
+"make -j12 all" terminated with exit code 2. Build might be incomplete.
+
+15:39:13 Build Failed. 45 errors, 3 warnings. (took 2s.169ms)
+

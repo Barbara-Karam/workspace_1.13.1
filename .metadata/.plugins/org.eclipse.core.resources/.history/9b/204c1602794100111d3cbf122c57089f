@@ -1,0 +1,37 @@
+    uint8_t imu_fail_count = 0;
+    uint32_t last_imu_ms = 0;
+    uint32_t last_imu_reinit_ms = 0;
+
+    while (1)
+    {
+        uint32_t now = HAL_GetTick();
+
+        /* ---- IMU @ 50 Hz, non-blocking to motor comms ---- */
+        if (imu_ok && (now - last_imu_ms) >= 20) {
+            last_imu_ms = now;
+            IMUData_t local_imu;
+            if (IMU_Read(&local_imu) == HAL_OK) {
+                imu_fail_count = 0;
+                __disable_irq();
+                imu_data = local_imu;
+                __enable_irq();
+                Comm_TransmitIMU(&imu_data);
+            } else {
+                imu_fail_count++;
+                // Only attempt re-init once per 5 seconds max
+                if (imu_fail_count >= 10 && (now - last_imu_reinit_ms) >= 5000) {
+                    last_imu_reinit_ms = now;
+                    imu_fail_count = 0;
+                    imu_ok = (IMU_Init() == HAL_OK) ? 1 : 0;
+                }
+            }
+        }
+
+        Comm_ProcessRx();
+        Comm_TransmitFeedback();
+
+        if (g_ctrl.tick_count % 100 == 0)
+            HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+
+        HAL_Delay(5);
+    }

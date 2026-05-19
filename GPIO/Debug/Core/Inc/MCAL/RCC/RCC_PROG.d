@@ -1,0 +1,9 @@
+Core/Inc/MCAL/RCC/RCC_PROG.o: ../Core/Inc/MCAL/RCC/RCC_PROG.c \
+ ../Core/Inc/LIBS/BIT_MATH.h ../Core/Inc/LIBS/STD_TYPES.h \
+ ../Core/Inc/MCAL/RCC/RCC_PRIVATE.h ../Core/Inc/MCAL/RCC/RCC_CONFIG.h \
+ ../Core/Inc/MCAL/RCC/RCC_INTERFACE.h
+../Core/Inc/LIBS/BIT_MATH.h:
+../Core/Inc/LIBS/STD_TYPES.h:
+../Core/Inc/MCAL/RCC/RCC_PRIVATE.h:
+../Core/Inc/MCAL/RCC/RCC_CONFIG.h:
+../Core/Inc/MCAL/RCC/RCC_INTERFACE.h:

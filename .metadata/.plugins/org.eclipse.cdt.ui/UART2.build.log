@@ -1,0 +1,27 @@
+17:27:36 **** Incremental Build of configuration Debug for project UART2 ****
+make -j12 all 
+arm-none-eabi-gcc "../Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F1 -DSTM32F103C6Tx -c -I../Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/main.d" -MT"Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Src/main.o"
+../Src/main.c: In function 'main':
+../Src/main.c:45:44: warning: pointer targets in passing argument 1 of 'MUSART1_VidSendStringSynch' differ in signedness [-Wpointer-sign]
+   45 |                 MUSART1_VidSendStringSynch("HELP");
+      |                                            ^~~~~~
+      |                                            |
+      |                                            char *
+In file included from ../Src/main.c:23:
+../Inc/USART_INTERFACE.h:40:40: note: expected 'u8 *' {aka 'unsigned char *'} but argument is of type 'char *'
+   40 | void MUSART1_VidSendStringSynch ( u8 * Copy_ptrString ) ;
+      |                                   ~~~~~^~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "UART2.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\UART2\STM32F103C6TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UART2.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: UART2.elf
+ 
+arm-none-eabi-size  UART2.elf 
+arm-none-eabi-objdump -h -S UART2.elf  > "UART2.list"
+   text	   data	    bss	    dec	    hex	filename
+   1808	      0	   1568	   3376	    d30	UART2.elf
+Finished building: default.size.stdout
+ 
+Finished building: UART2.list
+ 
+
+17:27:38 Build Finished. 0 errors, 1 warnings. (took 2s.72ms)
+

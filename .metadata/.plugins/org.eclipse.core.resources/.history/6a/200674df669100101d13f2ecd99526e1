@@ -1,0 +1,33 @@
+/*******************************************************
+ * Author  : Abdullah Waheed
+ * File    : RCC_interface.h
+ * Brief   : RCC Driver Interface (Static Config)
+ *******************************************************/
+
+#ifndef RCC_INTERFACE_H
+#define RCC_INTERFACE_H
+
+#include "LIB/STD_TYPES.h"
+
+/* Bus identifiers */
+typedef enum {
+    RCC_AHB  = 0,
+    RCC_APB1 = 1,
+    RCC_APB2 = 2
+} RCC_Bus_t;
+
+/* System clock sources */
+typedef enum {
+    RCC_SYSCLK_HSI = 0,
+    RCC_SYSCLK_HSE = 1,
+    RCC_SYSCLK_PLL = 2
+} RCC_ClockSource_t;
+
+/* Init function */
+void RCC_Init(void);
+
+/* Peripheral clock control */
+void RCC_EnableClock(RCC_Bus_t bus, uint8 perId);
+void RCC_DisableClock(RCC_Bus_t bus, uint8 perId);
+
+#endif /* RCC_INTERFACE_H */

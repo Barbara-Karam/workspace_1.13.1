@@ -1,0 +1,70 @@
+#include "imu.h"
+#include "i2c.h"
+
+#define I2C_TIMEOUT_MS  2
+
+static HAL_StatusTypeDef write_reg(uint8_t reg, uint8_t val)
+{
+    uint8_t buf[2] = {reg, val};
+    return HAL_I2C_Master_Transmit(&hi2c1, MPU6050_ADDR, buf, 2, I2C_TIMEOUT_MS);
+}
+
+bool IMU_IsConnected(void)
+{
+    uint8_t who = 0;
+    if (HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_WHO_AM_I,
+            I2C_MEMADD_SIZE_8BIT, &who, 1, I2C_TIMEOUT_MS) != HAL_OK)
+        return false;
+    return (who == 0x68);
+}
+
+HAL_StatusTypeDef IMU_Init(void)
+{
+    HAL_StatusTypeDef ret;
+    ret = write_reg(MPU6050_PWR_MGMT_1, 0x00);
+    if (ret != HAL_OK) return ret;
+    HAL_Delay(100);                 // MPU6050 requires this after wake-up
+    ret = write_reg(MPU6050_SMPLRT_DIV, 0x07);
+    if (ret != HAL_OK) return ret;
+    ret = write_reg(MPU6050_CONFIG, 0x03);
+    if (ret != HAL_OK) return ret;
+    ret = write_reg(MPU6050_GYRO_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+    ret = write_reg(MPU6050_ACCEL_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+    return HAL_OK;
+}
+
+HAL_StatusTypeDef IMU_Read(IMUData_t *data)
+{
+    uint8_t buf[14];
+    // 14 bytes @ 400 kHz ≈ 0.35 ms. 2 ms timeout is very safe.
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Read(
+        &hi2c1, MPU6050_ADDR,
+        MPU6050_ACCEL_XOUT_H,
+        I2C_MEMADD_SIZE_8BIT,
+        buf, 14, I2C_TIMEOUT_MS);
+
+    if (ret != HAL_OK) {
+        data->valid = false;
+        return ret;
+    }
+
+    int16_t raw_ax = (int16_t)((buf[0]  << 8) | buf[1]);
+    int16_t raw_ay = (int16_t)((buf[2]  << 8) | buf[3]);
+    int16_t raw_az = (int16_t)((buf[4]  << 8) | buf[5]);
+    int16_t raw_t  = (int16_t)((buf[6]  << 8) | buf[7]);
+    int16_t raw_gx = (int16_t)((buf[8]  << 8) | buf[9]);
+    int16_t raw_gy = (int16_t)((buf[10] << 8) | buf[11]);
+    int16_t raw_gz = (int16_t)((buf[12] << 8) | buf[13]);
+
+    data->accel_x = (raw_ax / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_y = (raw_ay / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_z = (raw_az / ACCEL_SCALE_2G) * 9.81f;
+    data->gyro_x  =  raw_gx / GYRO_SCALE_250DPS;
+    data->gyro_y  =  raw_gy / GYRO_SCALE_250DPS;
+    data->gyro_z  =  raw_gz / GYRO_SCALE_250DPS;
+    data->temp_c  = (raw_t  / 340.0f) + 36.53f;
+    data->valid   = true;
+    return HAL_OK;
+}

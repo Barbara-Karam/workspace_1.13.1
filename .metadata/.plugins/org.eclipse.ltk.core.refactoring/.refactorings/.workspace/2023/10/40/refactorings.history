@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Delete resource &apos;tryingbgdddd/Drivers/GPIO&apos;" deleteContents="false" description="Delete resource &apos;tryingbgdddd/Drivers/GPIO&apos;" element1="/tryingbgdddd/Drivers/GPIO" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1696192616986"/>&#x0A;<refactoring comment="Delete resource &apos;259trying&apos;" deleteContents="true" description="Delete resource &apos;259trying&apos;" element1="/259trying" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1696192623945"/>
+</session>

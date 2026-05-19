@@ -1,0 +1,6 @@
+#ifndef GPIO_PRIVATE_H
+#define GPIO_PRIVATE_H
+
+
+#include "LIB/STD_TYPES.h"
+

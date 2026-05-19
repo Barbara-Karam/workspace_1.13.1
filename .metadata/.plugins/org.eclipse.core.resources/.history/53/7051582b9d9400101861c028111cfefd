@@ -1,0 +1,36 @@
+/*
+ ******************************************************************************
+ * @file           : main.c
+ * @author         : Abdullah waheed
+ * @brief          : Main program body
+ ******************************************************************************
+ */
+
+#include <stdint.h>
+#include "MCAL/RCC/RCC_INTERFACE.h"
+#include "MCAL/GPIO/GPIO_INTERFACE.h"
+#include "HAL/7SEG/7SEG_INTERFACE.h"
+
+void Delay(volatile uint32_t count);
+
+int main(void)
+{
+    RCC_Init() ;
+    RCC_EnableClock(RCC_APB2, 2) ;
+    HAL_SEVEN_SEG_INIT(PORTA, PIN0);
+
+	for(;;)
+	{
+		HAL_SEVEN_SEG_OUTPUT(PORTA, PIN0, EIGHT);
+	}
+}
+
+void Delay(volatile uint32_t count)
+{
+	count*=75 ;
+    while(count--)
+    {
+        __asm("NOP");   // no operation (just waste 1 cycle)
+    }
+}
+

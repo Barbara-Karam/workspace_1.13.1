@@ -1,0 +1,103 @@
+#include "imu.h"
+#include "i2c.h"
+
+// Shorter timeout — fail fast instead of blocking the main loop
+#define I2C_TIMEOUT  5   // ms — was 10ms
+
+// ─── Private: I2C Bus Recovery ───────────────────────────────────────────────
+// Called when HAL_I2C returns non-OK. Resets the I2C peripheral state.
+// Without this, one failed transaction permanently stalls all future reads.
+static void i2c_recover(void)
+{
+    HAL_I2C_DeInit(&hi2c1);
+    HAL_Delay(5);
+    HAL_I2C_Init(&hi2c1);
+}
+
+// ─── Private Helpers ─────────────────────────────────────────────────────────
+static HAL_StatusTypeDef write_reg(uint8_t reg, uint8_t val)
+{
+    uint8_t buf[2] = {reg, val};
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(
+        &hi2c1, MPU6050_ADDR, buf, 2, I2C_TIMEOUT);
+    if (ret != HAL_OK) i2c_recover();
+    return ret;
+}
+
+static HAL_StatusTypeDef read_reg(uint8_t reg, uint8_t *buf, uint16_t len)
+{
+    HAL_StatusTypeDef ret;
+
+    ret = HAL_I2C_Master_Transmit(
+        &hi2c1, MPU6050_ADDR, &reg, 1, I2C_TIMEOUT);
+    if (ret != HAL_OK) { i2c_recover(); return ret; }
+
+    ret = HAL_I2C_Master_Receive(
+        &hi2c1, MPU6050_ADDR, buf, len, I2C_TIMEOUT);
+    if (ret != HAL_OK) { i2c_recover(); return ret; }
+
+    return HAL_OK;
+}
+
+// ─── WHO_AM_I Check ──────────────────────────────────────────────────────────
+bool IMU_IsConnected(void)
+{
+    uint8_t who = 0;
+    if (read_reg(MPU6050_WHO_AM_I, &who, 1) != HAL_OK) return false;
+    return (who == 0x68);
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+HAL_StatusTypeDef IMU_Init(void)
+{
+    HAL_StatusTypeDef ret;
+
+    ret = write_reg(MPU6050_PWR_MGMT_1, 0x00);
+    if (ret != HAL_OK) return ret;
+    HAL_Delay(100);
+
+    ret = write_reg(MPU6050_SMPLRT_DIV, 0x07);
+    if (ret != HAL_OK) return ret;
+
+    ret = write_reg(MPU6050_CONFIG, 0x03);
+    if (ret != HAL_OK) return ret;
+
+    ret = write_reg(MPU6050_GYRO_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+
+    ret = write_reg(MPU6050_ACCEL_CONFIG, 0x00);
+    if (ret != HAL_OK) return ret;
+
+    return HAL_OK;
+}
+
+// ─── Read All Sensors ────────────────────────────────────────────────────────
+HAL_StatusTypeDef IMU_Read(IMUData_t *data)
+{
+    uint8_t buf[14];
+
+    HAL_StatusTypeDef ret = read_reg(MPU6050_ACCEL_XOUT_H, buf, 14);
+    if (ret != HAL_OK) {
+        data->valid = false;
+        return ret;
+    }
+
+    int16_t raw_ax = (int16_t)((buf[0]  << 8) | buf[1]);
+    int16_t raw_ay = (int16_t)((buf[2]  << 8) | buf[3]);
+    int16_t raw_az = (int16_t)((buf[4]  << 8) | buf[5]);
+    int16_t raw_t  = (int16_t)((buf[6]  << 8) | buf[7]);
+    int16_t raw_gx = (int16_t)((buf[8]  << 8) | buf[9]);
+    int16_t raw_gy = (int16_t)((buf[10] << 8) | buf[11]);
+    int16_t raw_gz = (int16_t)((buf[12] << 8) | buf[13]);
+
+    data->accel_x = (raw_ax / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_y = (raw_ay / ACCEL_SCALE_2G) * 9.81f;
+    data->accel_z = (raw_az / ACCEL_SCALE_2G) * 9.81f;
+    data->gyro_x  =  raw_gx / GYRO_SCALE_250DPS;
+    data->gyro_y  =  raw_gy / GYRO_SCALE_250DPS;
+    data->gyro_z  =  raw_gz / GYRO_SCALE_250DPS;
+    data->temp_c  = (raw_t  / 340.0f) + 36.53f;
+    data->valid   = true;
+
+    return HAL_OK;
+}

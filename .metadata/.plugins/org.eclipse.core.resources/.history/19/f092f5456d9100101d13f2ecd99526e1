@@ -1,0 +1,7 @@
+#ifndef GPIO_INTERFACE_H
+#define GPIO_INTERFACE_H
+
+#include "LIB/STD_TYPES.h"
+#in
+
+void GPIO_PinSetDir()

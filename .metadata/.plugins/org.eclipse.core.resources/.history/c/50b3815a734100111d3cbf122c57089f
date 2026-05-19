@@ -1,0 +1,180 @@
+#include "comm.h"
+#include "usart.h"
+#include "control_loop.h"
+#include "encoder.h"
+#include "motor_control.h"
+#include <string.h>
+
+// ─── Buffers ──────────────────────────────────────────────────────────────────
+static uint8_t rx_buf[COMM_RX_BUF_SIZE];
+static uint8_t tx_buf[COMM_TX_BUF_SIZE];          // Motor FB + Heartbeat
+static uint8_t imu_tx_buf[COMM_IMU_TX_BUF_SIZE];  // IMU packets only
+
+// ─── Heartbeat Pending Flag ───────────────────────────────────────────────────
+// Set in ISR context (RxEventCallback), consumed in main loop (ProcessRx).
+// Avoids calling blocking UART TX from ISR.
+static volatile uint8_t s_hb_pending = 0;
+
+// ─── Private: CRC8 (poly 0x07) ───────────────────────────────────────────────
+static uint8_t crc8(const uint8_t *data, uint16_t len)
+{
+    uint8_t crc = 0x00;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) : (crc << 1);
+        }
+    }
+    return crc;
+}
+
+// ─── Private: Frame Builder ───────────────────────────────────────────────────
+// Returns total byte count to transmit.
+// buf must be at least (5 + payload_len) bytes.
+static uint8_t build_frame(uint8_t *buf,
+                            uint8_t msg_type,
+                            const void *payload,
+                            uint8_t payload_len)
+{
+    buf[0] = COMM_SYNC1;
+    buf[1] = COMM_SYNC2;
+    buf[2] = msg_type;
+    buf[3] = payload_len;
+
+    if (payload != NULL && payload_len > 0) {
+        memcpy(&buf[4], payload, payload_len);
+    }
+
+    // CRC covers [TYPE][LEN][PAYLOAD] — not the sync bytes
+    buf[4 + payload_len] = crc8(&buf[2], 2 + payload_len);
+
+    return (uint8_t)(5 + payload_len);
+}
+
+// ─── Private: Blocking TX ────────────────────────────────────────────────────
+// At 921600 baud:
+//   37-byte IMU frame      → ~0.32 ms
+//   42-byte ActuatorFB     → ~0.36 ms
+// Both well within the 10 ms main loop budget.
+// Using blocking TX eliminates DMA TX state-machine issues entirely.
+static void uart_tx(uint8_t *buf, uint8_t len)
+{
+    HAL_UART_Transmit(&huart2, buf, len, 10);  // 10ms timeout — never hit at 921600
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+void Comm_Init(void)
+{
+    // DMA RX with idle line detection — fires callback on complete frame or line idle
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);  // Suppress half-transfer IRQ
+}
+
+// ─── RX Event Callback (called from UART IRQ) ────────────────────────────────
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
+{
+    if (huart->Instance != USART2) return;
+
+    Comm_RxEventCallback(size);
+
+    // Re-arm DMA RX immediately — do not lose incoming bytes
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+}
+
+// ─── Frame Parser (ISR context) ───────────────────────────────────────────────
+void Comm_RxEventCallback(uint16_t size)
+{
+    // Minimum valid frame = [SYNC1][SYNC2][TYPE][LEN][CRC] = 5 bytes
+    if (size < 5) return;
+    if (rx_buf[0] != COMM_SYNC1 || rx_buf[1] != COMM_SYNC2) return;
+
+    uint8_t msg_type    = rx_buf[2];
+    uint8_t payload_len = rx_buf[3];
+
+    // Total frame must match exactly
+    if ((uint16_t)(5 + payload_len) != size) return;
+
+    // CRC check — covers TYPE + LEN + PAYLOAD
+    uint8_t crc_rx   = rx_buf[4 + payload_len];
+    uint8_t crc_calc = crc8(&rx_buf[2], 2 + payload_len);
+    if (crc_rx != crc_calc) return;
+
+    uint8_t *payload = &rx_buf[4];
+
+    switch (msg_type) {
+
+        case MSG_CONTROL_CMD: {
+            if (payload_len != sizeof(ControlCmd_t)) return;
+            ControlCmd_t cmd;
+            memcpy(&cmd, payload, sizeof(ControlCmd_t));
+            for (uint8_t i = 0; i < 4; i++) {
+                ControlLoop_SetTarget(i, (float)cmd.vel_rpm10[i] / 10.0f);
+            }
+            break;
+        }
+
+        case MSG_HEARTBEAT:
+            // Flag it — do NOT transmit from ISR context
+            s_hb_pending = 1;
+            break;
+
+        case MSG_ESTOP:
+            Motor_EmergencyStop();
+            ControlLoop_Disable();
+            break;
+
+        default:
+            break;
+    }
+}
+
+// ─── Process RX — Main Loop ───────────────────────────────────────────────────
+void Comm_ProcessRx(void)
+{
+    // Handle deferred heartbeat response
+    if (s_hb_pending) {
+        s_hb_pending = 0;
+        uint8_t len = build_frame(tx_buf, MSG_HEARTBEAT, NULL, 0);
+        uart_tx(tx_buf, len);
+    }
+}
+
+// ─── Transmit Motor Feedback — Main Loop ─────────────────────────────────────
+void Comm_TransmitFeedback(void)
+{
+    if (!g_ctrl.feedback_ready) return;
+    g_ctrl.feedback_ready = 0;
+
+    ActuatorFB_t fb;
+    for (uint8_t i = 0; i < 4; i++) {
+        fb.vel_rpm10[i] = (int16_t)(g_ctrl.measured_rpm[i] * 10.0f);
+        fb.enc_count[i] = Encoder_GetCount(i);
+        fb.pwm_out[i]   = (int16_t)g_ctrl.output_pwm[i];
+    }
+    fb.timestamp_ms = HAL_GetTick();
+    fb.sys_status   = 0;  // TODO: hook into FDIR module
+
+    uint8_t len = build_frame(tx_buf, MSG_ACTUATOR_FB, &fb, sizeof(ActuatorFB_t));
+    uart_tx(tx_buf, len);
+}
+
+// ─── Transmit IMU Data — Main Loop ───────────────────────────────────────────
+void Comm_TransmitIMU(const IMUData_t *data)
+{
+    if (data == NULL || !data->valid) return;
+
+    IMUPayload_t pkt = {
+        .accel_x      = data->accel_x,
+        .accel_y      = data->accel_y,
+        .accel_z      = data->accel_z,
+        .gyro_x       = data->gyro_x,
+        .gyro_y       = data->gyro_y,
+        .gyro_z       = data->gyro_z,
+        .temp_c       = data->temp_c,
+        .timestamp_ms = HAL_GetTick(),
+    };
+
+    uint8_t len = build_frame(imu_tx_buf, MSG_IMU_DATA, &pkt, sizeof(IMUPayload_t));
+    uart_tx(imu_tx_buf, len);
+}

@@ -1,0 +1,7 @@
+Core/Src/main.o: ../Core/Src/main.c ../Core/MCAL/RCC/RCC_INTERFACE.h \
+ ../Core/LIB/STD_TYPES.h ../Core/MCAL/GPIO/GPIO_INTERFACE.h \
+ ../Core/MCAL/GPIO/GPIO_PRIVATE.h
+../Core/MCAL/RCC/RCC_INTERFACE.h:
+../Core/LIB/STD_TYPES.h:
+../Core/MCAL/GPIO/GPIO_INTERFACE.h:
+../Core/MCAL/GPIO/GPIO_PRIVATE.h:

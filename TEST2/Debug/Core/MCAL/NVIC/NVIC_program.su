@@ -1,0 +1,7 @@
+../Core/MCAL/NVIC/NVIC_program.c:15:6:MNVIC_VidEnableInterrupt	16	static
+../Core/MCAL/NVIC/NVIC_program.c:28:6:MNVIC_VidDisableInterrupt	16	static
+../Core/MCAL/NVIC/NVIC_program.c:41:6:MNVIC_VidSetPendingFlag	16	static
+../Core/MCAL/NVIC/NVIC_program.c:53:6:MNVIC_VidClearPendingFlag	16	static
+../Core/MCAL/NVIC/NVIC_program.c:66:7:MNVIC_u8GetPendingFlag	24	static
+../Core/MCAL/NVIC/NVIC_program.c:86:9:MNVIC_u8GetActiveFlag	24	static
+../Core/MCAL/NVIC/NVIC_program.c:104:6:MNVIC_vidSetPriority	16	static

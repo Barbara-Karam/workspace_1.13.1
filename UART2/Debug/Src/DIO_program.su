@@ -1,0 +1,7 @@
+../Src/DIO_program.c:13:6:DIO_voidSetPortDirection	32	static
+../Src/DIO_program.c:43:6:DIO_voidSetPinDirection	16	static
+../Src/DIO_program.c:165:6:DIO_voidSetPortValue	16	static
+../Src/DIO_program.c:247:6:DIO_voidSetPinValue	16	static
+../Src/DIO_program.c:281:4:DIO_u8GetPortValue	16	static
+../Src/DIO_program.c:295:4:DIO_u8GetPinValue	16	static
+../Src/DIO_program.c:308:6:DIO_voidTogglePinValue	16	static

@@ -1,0 +1,9 @@
+20:32:15 **** Incremental Build of configuration Default for project MCAL_GPIO ****
+make all 
+Cannot run program "make": Launching failed
+
+Error: Program "make" not found in PATH
+PATH=[C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE//plugins/com.st.stm32cube.ide.jre.win64_3.0.0.202305091045/jre/bin/server;C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE//plugins/com.st.stm32cube.ide.jre.win64_3.0.0.202305091045/jre/bin;C:\MinGW\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\brbar\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\brbar\AppData\Local\Programs\Python\Python310\;C:\Users\brbar\AppData\Local\Microsoft\WindowsApps;C:\Users\brbar\AppData\Local\GitHubDesktop\bin;C:\Program Files\JetBrains\PyCharm Community Edition 2022.3\bin;;;C:\ST\STM32CubeIDE_1.13.1\STM32CubeIDE]
+
+20:32:15 Build Failed. 1 errors, 0 warnings. (took 187ms)
+

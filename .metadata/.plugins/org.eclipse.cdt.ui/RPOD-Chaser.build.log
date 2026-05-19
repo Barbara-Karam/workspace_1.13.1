@@ -1,0 +1,10 @@
+00:47:18 **** Incremental Build of configuration Debug for project RPOD-Chaser ****
+make -j12 all 
+arm-none-eabi-size  RPOD-Chaser.elf 
+   text	   data	    bss	    dec	    hex	filename
+  34780	     28	   2788	  37596	   92dc	RPOD-Chaser.elf
+Finished building: default.size.stdout
+ 
+
+00:47:18 Build Finished. 0 errors, 0 warnings. (took 379ms)
+

@@ -1,0 +1,23 @@
+00:09:48 **** Incremental Build of configuration Debug for project help ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F103x6 -c -I../Core/Inc -I../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I../Drivers/STM32F1xx_HAL_Driver/Inc -I../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "help.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\help\STM32F103C6TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="help.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: help.elf
+ 
+arm-none-eabi-size   help.elf 
+arm-none-eabi-objdump -h -S  help.elf  > "help.list"
+arm-none-eabi-objcopy  -O ihex  help.elf  "help.hex"
+arm-none-eabi-objcopy  -O binary  help.elf  "help.bin"
+   text	   data	    bss	    dec	    hex	filename
+   4556	     20	   1572	   6148	   1804	help.elf
+Finished building: default.size.stdout
+ 
+Finished building: help.hex
+Finished building: help.bin
+Finished building: help.list
+ 
+ 
+ 
+
+00:09:50 Build Finished. 0 errors, 0 warnings. (took 1s.622ms)
+

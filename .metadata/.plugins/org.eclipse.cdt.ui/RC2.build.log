@@ -1,0 +1,7 @@
+03:00:29 **** Rebuild of configuration Debug for project RC2 ****
+Info: Internal Builder is used for build
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\RC2.o" "..\\src\\RC2.cpp" 
+g++ -o RC2.exe "src\\RC2.o" 
+
+03:00:31 Build Finished. 0 errors, 0 warnings. (took 1s.626ms)
+

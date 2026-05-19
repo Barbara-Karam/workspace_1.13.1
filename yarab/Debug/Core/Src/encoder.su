@@ -1,0 +1,6 @@
+../Core/Src/encoder.c:25:6:Encoder_Init	16	static
+../Core/Src/encoder.c:42:6:Encoder_Update	24	static
+../Core/Src/encoder.c:73:9:Encoder_GetCount	16	static
+../Core/Src/encoder.c:79:7:Encoder_GetRPM	16	static
+../Core/Src/encoder.c:86:6:Encoder_Reset	16	static
+../Core/Src/encoder.c:98:6:Encoder_ResetAll	16	static

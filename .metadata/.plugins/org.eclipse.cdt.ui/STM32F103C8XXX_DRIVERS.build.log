@@ -1,0 +1,91 @@
+19:59:47 **** Build of configuration Debug for project STM32F103C8XXX_DRIVERS ****
+make -j12 all 
+arm-none-eabi-gcc "../Src/main.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F1 -DSTM32F103C8Tx -c -I../Inc -I"C:/Users/brbar/Documents/GitHub/STM32F103C8XXX" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Src/main.d" -MT"Src/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "Src/main.o"
+arm-none-eabi-gcc "../MCAL/RCC/RCC_PROG.c" -mcpu=cortex-m3 -std=gnu11 -g3 -DDEBUG -DSTM32 -DSTM32F1 -DSTM32F103C8Tx -c -I../Inc -I"C:/Users/brbar/Documents/GitHub/STM32F103C8XXX" -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"MCAL/RCC/RCC_PROG.d" -MT"MCAL/RCC/RCC_PROG.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "MCAL/RCC/RCC_PROG.o"
+In file included from ../MCAL/RCC/RCC_PROG.c:12:
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_INTERFACE.h:30:37: error: unknown type name 'uint8'; did you mean 'int'?
+   30 | void RCC_EnableClock(RCC_Bus_t bus, uint8 perId);
+      |                                     ^~~~~
+      |                                     int
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_INTERFACE.h:31:38: error: unknown type name 'uint8'; did you mean 'int'?
+   31 | void RCC_DisableClock(RCC_Bus_t bus, uint8 perId);
+      |                                      ^~~~~
+      |                                      int
+In file included from ../MCAL/RCC/RCC_PROG.c:7:
+../MCAL/RCC/RCC_PROG.c: In function 'RCC_Init':
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:16:37: error: unknown type name 'uint32'
+   16 | #define RCC_CR          (*(volatile uint32 *)(RCC_BASE + 0x00))   // Clock control register
+      |                                     ^~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/LIB/BIT_MATH.h:12:29: note: in definition of macro 'SET_BIT'
+   12 | #define SET_BIT(REG,BIT)  ( REG |=  (1 << BIT))
+      |                             ^~~
+../MCAL/RCC/RCC_PROG.c:19:13: note: in expansion of macro 'RCC_CR'
+   19 |     SET_BIT(RCC_CR, 16);          // HSEON
+      |             ^~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:16:37: error: unknown type name 'uint32'
+   16 | #define RCC_CR          (*(volatile uint32 *)(RCC_BASE + 0x00))   // Clock control register
+      |                                     ^~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/LIB/BIT_MATH.h:18:29: note: in definition of macro 'GET_BIT'
+   18 | #define GET_BIT(REG,BIT)  ((REG >> BIT) & 0x01U)
+      |                             ^~~
+../MCAL/RCC/RCC_PROG.c:20:21: note: in expansion of macro 'RCC_CR'
+   20 |     while (!GET_BIT(RCC_CR, 17)); // Wait HSERDY
+      |                     ^~~~~~
+In file included from ../MCAL/RCC/RCC_PROG.c:10:
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:45:5: note: in expansion of macro 'RCC_CFGR'
+   45 |     RCC_CFGR &= ~(0xFU << 4);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:67:5: note: in expansion of macro 'RCC_CFGR'
+   67 |     RCC_CFGR &= ~(0x7U << 8);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:70:5: note: in expansion of macro 'RCC_CFGR'
+   70 |     RCC_CFGR |= (0x4U << 8);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:80:5: note: in expansion of macro 'RCC_CFGR'
+   80 |     RCC_CFGR &= ~(0x7U << 11);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:93:5: note: in expansion of macro 'RCC_CFGR'
+   93 |     RCC_CFGR &= ~(0x3U << 0);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:94:5: note: in expansion of macro 'RCC_CFGR'
+   94 |     RCC_CFGR |= (RCC_SYSCLK_SOURCE & 0x3U);
+      |     ^~~~~~~~
+C:/Users/brbar/Documents/GitHub/STM32F103C8XXX/MCAL/RCC/RCC_PRIVATE.h:17:37: error: unknown type name 'uint32'
+   17 | #define RCC_CFGR        (*(volatile uint32 *)(RCC_BASE + 0x04))   // Clock configuration register
+      |                                     ^~~~~~
+../MCAL/RCC/RCC_PROG.c:96:14: note: in expansion of macro 'RCC_CFGR'
+   96 |     while (((RCC_CFGR >> 2) & 0x3U) != RCC_SYSCLK_SOURCE);
+      |              ^~~~~~~~
+../MCAL/RCC/RCC_PROG.c: At top level:
+../MCAL/RCC/RCC_PROG.c:100:37: error: unknown type name 'uint8'; did you mean 'int'?
+  100 | void RCC_EnableClock(RCC_Bus_t bus, uint8 perId)
+      |                                     ^~~~~
+      |                                     int
+../MCAL/RCC/RCC_PROG.c:112:38: error: unknown type name 'uint8'; did you mean 'int'?
+  112 | void RCC_DisableClock(RCC_Bus_t bus, uint8 perId)
+      |                                      ^~~~~
+      |                                      int
+make: *** [MCAL/RCC/subdir.mk:19: MCAL/RCC/RCC_PROG.o] Error 1
+make: *** Waiting for unfinished jobs....
+"make -j12 all" terminated with exit code 2. Build might be incomplete.
+
+19:59:47 Build Failed. 15 errors, 0 warnings. (took 400ms)
+

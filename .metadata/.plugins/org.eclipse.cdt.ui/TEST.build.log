@@ -1,0 +1,22 @@
+19:32:48 **** Incremental Build of configuration Debug for project TEST ****
+make -j12 all 
+arm-none-eabi-gcc -o "TEST.elf" @"objects.list"   -mcpu=cortex-m3 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\TEST\STM32F103C6TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TEST.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: TEST.elf
+ 
+arm-none-eabi-size   TEST.elf 
+arm-none-eabi-objdump -h -S  TEST.elf  > "TEST.list"
+arm-none-eabi-objcopy  -O ihex  TEST.elf  "TEST.hex"
+   text	   data	    bss	    dec	    hex	filename
+   4576	     20	   1572	   6168	   1818	TEST.elf
+arm-none-eabi-objcopy  -O binary  TEST.elf  "TEST.bin"
+Finished building: default.size.stdout
+ 
+Finished building: TEST.list
+ 
+Finished building: TEST.hex
+Finished building: TEST.bin
+ 
+ 
+
+19:32:50 Build Finished. 0 errors, 0 warnings. (took 1s.277ms)
+

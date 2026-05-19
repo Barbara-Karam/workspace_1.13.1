@@ -1,0 +1,3 @@
+../Core/MCAL/RCC/RCC_PROG.c:15:6:RCC_Init	4	static
+../Core/MCAL/RCC/RCC_PROG.c:100:6:RCC_EnableClock	16	static
+../Core/MCAL/RCC/RCC_PROG.c:112:6:RCC_DisableClock	16	static

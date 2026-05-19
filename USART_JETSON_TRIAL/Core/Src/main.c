@@ -1,0 +1,207 @@
+/* USER CODE BEGIN Header */
+/**
+ * Blue Pill (STM32F103C8T6) — MPU-6050 IMU over I2C
+ * Transmits raw Accel + Gyro (6-axis) over USART1 @ 115200 baud
+ * Live Expressions in STM32CubeIDE: accel_x, accel_y, accel_z,
+ *                                    gyro_x,  gyro_y,  gyro_z
+ * Clock: HSI 8 MHz, PLL (HSI/2 x 16) = 64 MHz — no external crystal
+ *
+ * Wiring:
+ *   MPU-6050 SDA  → PB7  (I2C1 SDA)
+ *   MPU-6050 SCL  → PB6  (I2C1 SCL)
+ *   MPU-6050 VCC  → 3.3V
+ *   MPU-6050 GND  → GND
+ *   MPU-6050 AD0  → GND  (I2C address = 0x68)
+ *
+ *   USART1 TX     → PA9  (→ Jetson Orin Nano RX via 3.3V logic)
+ *   USART1 RX     → PA10 (optional, not used here)
+ *
+ * Packet format (ASCII, newline-terminated):
+ *   AX:<val>,AY:<val>,AZ:<val>,GX:<val>,GY:<val>,GZ:<val>\r\n
+ *   e.g.  AX:1024,AY:-312,AZ:16380,GX:45,GY:-12,GZ:3\r\n
+ */
+/* USER CODE END Header */
+
+#include "main.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+/* ── Peripheral handles ──────────────────────────────────────────────────── */
+I2C_HandleTypeDef  hi2c1;
+USART_HandleTypeDef husart1;   /* TX-only, synchronous-capable handle        */
+
+/* ── MPU-6050 defines ────────────────────────────────────────────────────── */
+#define MPU6050_ADDR        (0x68 << 1)   /* AD0 = GND → 0x68, shifted for HAL */
+#define MPU6050_REG_PWR     0x6B
+#define MPU6050_REG_ACCEL   0x3B          /* ACCEL_XOUT_H — 6 bytes follow     */
+#define MPU6050_REG_GYRO    0x43          /* GYRO_XOUT_H  — 6 bytes follow     */
+#define MPU6050_REG_DLPF    0x1A          /* Config: DLPF                      */
+#define MPU6050_REG_GYROCFG 0x1B          /* Gyro  full-scale: ±250 °/s        */
+#define MPU6050_REG_ACCCFG  0x1C          /* Accel full-scale: ±2 g            */
+
+/* ── Live Expression variables (add these in STM32CubeIDE Expressions view) */
+volatile int16_t accel_x = 0;
+volatile int16_t accel_y = 0;
+volatile int16_t accel_z = 0;
+volatile int16_t gyro_x  = 0;
+volatile int16_t gyro_y  = 0;
+volatile int16_t gyro_z  = 0;
+
+/* ── Private prototypes ──────────────────────────────────────────────────── */
+static void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_USART1_Init(void);
+static void MPU6050_Init(void);
+static void MPU6050_Read(void);
+static void USART_SendPacket(void);
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * main
+ * ═══════════════════════════════════════════════════════════════════════════ */
+int main(void)
+{
+  HAL_Init();
+  SystemClock_Config();
+
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART1_Init();
+
+  MPU6050_Init();
+
+  while (1)
+  {
+    MPU6050_Read();
+    USART_SendPacket();
+    HAL_Delay(10);   /* ~100 Hz publish rate — adjust as needed */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MPU-6050 helpers
+ * ═══════════════════════════════════════════════════════════════════════════ */
+static void MPU6050_Init(void)
+{
+  uint8_t data;
+
+  /* Wake up — clear SLEEP bit */
+  data = 0x00;
+  HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_REG_PWR, 1, &data, 1, HAL_MAX_DELAY);
+  HAL_Delay(100);
+
+  /* DLPF = 3  →  Accel BW 44 Hz, Gyro BW 42 Hz */
+  data = 0x03;
+  HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_REG_DLPF, 1, &data, 1, HAL_MAX_DELAY);
+
+  /* Gyro  full-scale ±250 °/s */
+  data = 0x00;
+  HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_REG_GYROCFG, 1, &data, 1, HAL_MAX_DELAY);
+
+  /* Accel full-scale ±2 g */
+  data = 0x00;
+  HAL_I2C_Mem_Write(&hi2c1, MPU6050_ADDR, MPU6050_REG_ACCCFG, 1, &data, 1, HAL_MAX_DELAY);
+}
+
+static void MPU6050_Read(void)
+{
+  uint8_t buf[14];   /* ACCEL(6) + TEMP(2) + GYRO(6) */
+
+  /* Burst-read from ACCEL_XOUT_H through GYRO_ZOUT_L in one transaction */
+  HAL_I2C_Mem_Read(&hi2c1, MPU6050_ADDR, MPU6050_REG_ACCEL, 1, buf, 14, HAL_MAX_DELAY);
+
+  accel_x = (int16_t)((buf[0]  << 8) | buf[1]);
+  accel_y = (int16_t)((buf[2]  << 8) | buf[3]);
+  accel_z = (int16_t)((buf[4]  << 8) | buf[5]);
+  /* buf[6..7] = temperature — skipped */
+  gyro_x  = (int16_t)((buf[8]  << 8) | buf[9]);
+  gyro_y  = (int16_t)((buf[10] << 8) | buf[11]);
+  gyro_z  = (int16_t)((buf[12] << 8) | buf[13]);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * USART packet builder
+ * Format: AX:<v>,AY:<v>,AZ:<v>,GX:<v>,GY:<v>,GZ:<v>\r\n
+ * ═══════════════════════════════════════════════════════════════════════════ */
+static void USART_SendPacket(void)
+{
+  char tx_buf[64];
+  int  len = snprintf(tx_buf, sizeof(tx_buf),
+                      "AX:%d,AY:%d,AZ:%d,GX:%d,GY:%d,GZ:%d\r\n",
+                      accel_x, accel_y, accel_z,
+                      gyro_x,  gyro_y,  gyro_z);
+
+  HAL_USART_Transmit(&husart1, (uint8_t *)tx_buf, (uint16_t)len, HAL_MAX_DELAY);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Peripheral init — generated by CubeMX, kept minimal for clarity
+ * ═══════════════════════════════════════════════════════════════════════════ */
+static void MX_I2C1_Init(void)
+{
+  hi2c1.Instance             = I2C1;
+  hi2c1.Init.ClockSpeed      = 400000;          /* 400 kHz Fast-mode */
+  hi2c1.Init.DutyCycle       = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1     = 0;
+  hi2c1.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2     = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK) { Error_Handler(); }
+}
+
+static void MX_USART1_Init(void)
+{
+  husart1.Instance       = USART1;
+  husart1.Init.BaudRate  = 115200;
+  husart1.Init.WordLength = USART_WORDLENGTH_8B;
+  husart1.Init.StopBits  = USART_STOPBITS_1;
+  husart1.Init.Parity    = USART_PARITY_NONE;
+  husart1.Init.Mode      = USART_MODE_TX;       /* TX only */
+  husart1.Init.CLKPolarity = USART_POLARITY_LOW;
+  husart1.Init.CLKPhase    = USART_PHASE_1EDGE;
+  husart1.Init.CLKLastBit  = USART_LASTBIT_DISABLE;
+  if (HAL_USART_Init(&husart1) != HAL_OK) { Error_Handler(); }
+}
+
+static void MX_GPIO_Init(void)
+{
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  /* PA9 (TX) and PB6/PB7 (I2C) are configured automatically by HAL MSP */
+}
+
+/* ── System clock: 64 MHz via PLL from HSI (no external crystal) ───────────
+ *   HSI = 8 MHz → PLL source = HSI/2 = 4 MHz → × 16 = 64 MHz
+ *   APB1 must not exceed 36 MHz → divide by 2 = 32 MHz  ✓
+ *   APB2 = 64 MHz  ✓
+ *   FLASH latency = 2 wait states (required for SYSCLK > 48 MHz)           */
+static void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState       = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSI_DIV2; /* 8/2 = 4 MHz */
+  RCC_OscInitStruct.PLL.PLLMUL     = RCC_PLL_MUL16;          /* 4 × 16 = 64 MHz */
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) { Error_Handler(); }
+
+  RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+                                   | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;   /* 32 MHz — within 36 MHz limit */
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;   /* 64 MHz */
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) { Error_Handler(); }
+}
+
+void Error_Handler(void)
+{
+  __disable_irq();
+  while (1) { /* trap */ }
+}

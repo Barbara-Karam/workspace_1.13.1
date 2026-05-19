@@ -1,0 +1,11 @@
+2026-04-22 00:23:09,894 [INFO] WebApp:194 - Connection lost
+2026-04-22 00:23:12,006 [INFO] WebApp:191 - Connection restablished
+2026-04-22 00:23:13,114 [INFO] WebApp:194 - Connection lost
+2026-04-22 00:23:13,861 [INFO] WebApp:191 - Connection restablished
+2026-04-22 01:02:08,928 [INFO] WebApp:194 - Connection lost
+2026-04-22 01:02:09,415 [INFO] WebApp:191 - Connection restablished
+2026-04-22 01:02:11,659 [INFO] WebApp:194 - Connection lost
+2026-04-22 01:02:11,815 [INFO] WebApp:191 - Connection restablished
+2026-04-22 01:02:14,747 [INFO] WebApp:194 - Connection lost
+2026-04-22 01:02:15,335 [INFO] WebApp:191 - Connection restablished
+2026-04-22 01:45:08,408 [INFO] WebApp:403 - JxBrowser engine has been closed 
