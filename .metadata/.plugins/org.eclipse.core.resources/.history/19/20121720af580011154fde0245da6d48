@@ -1,0 +1,116 @@
+#include "motor_control.h"
+#include "tim.h"
+#include <stdlib.h>
+
+static MotorState_t state[MOTOR_COUNT];
+
+void Motor_Init(void)
+{
+    // Start main channels
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+
+    // Start complementary channels
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_2);
+    HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_3);
+
+    // Start Motor 4 timers (You'll need to enable TIM10 and TIM11 in CubeMX/tim.c)
+    HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim11, TIM_CHANNEL_1);
+
+    Motor_CoastAll();
+}
+
+void Motor_Set(uint8_t id, int16_t pwm_signed)
+{
+    if (id >= MOTOR_COUNT) return;
+
+    // Clamp PWM
+    if (pwm_signed > (int16_t)PWM_MAX) pwm_signed = (int16_t)PWM_MAX;
+    if (pwm_signed < -(int16_t)PWM_MAX) pwm_signed = -(int16_t)PWM_MAX;
+
+    uint16_t duty = abs(pwm_signed);
+    MotorDir_t new_dir = (pwm_signed > 0) ? MOTOR_DIR_FORWARD :
+                         (pwm_signed < 0) ? MOTOR_DIR_REVERSE : MOTOR_DIR_COAST;
+
+    // Apply hardware PWM routing
+    switch(id) {
+        case 0: // Motor 1: TIM1 CH1 (PA8) & CH1N (PB13)
+            if (new_dir == MOTOR_DIR_FORWARD) {
+                TIM1->CCER |= TIM_CCER_CC1E;       // Enable RPWM
+                TIM1->CCER &= ~TIM_CCER_CC1NE;     // Disable LPWM (drops to 0V)
+            } else if (new_dir == MOTOR_DIR_REVERSE) {
+                TIM1->CCER &= ~TIM_CCER_CC1E;      // Disable RPWM
+                TIM1->CCER |= TIM_CCER_CC1NE;      // Enable LPWM
+            } else {
+                TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE);
+            }
+            TIM1->CCR1 = duty;
+            break;
+
+        case 1: // Motor 2: TIM1 CH2 (PA9) & CH2N (PB14)
+            if (new_dir == MOTOR_DIR_FORWARD) {
+                TIM1->CCER |= TIM_CCER_CC2E;
+                TIM1->CCER &= ~TIM_CCER_CC2NE;
+            } else if (new_dir == MOTOR_DIR_REVERSE) {
+                TIM1->CCER &= ~TIM_CCER_CC2E;
+                TIM1->CCER |= TIM_CCER_CC2NE;
+            } else {
+                TIM1->CCER &= ~(TIM_CCER_CC2E | TIM_CCER_CC2NE);
+            }
+            TIM1->CCR2 = duty;
+            break;
+
+        case 2: // Motor 3: TIM1 CH3 (PA10) & CH3N (PB15)
+            if (new_dir == MOTOR_DIR_FORWARD) {
+                TIM1->CCER |= TIM_CCER_CC3E;
+                TIM1->CCER &= ~TIM_CCER_CC3NE;
+            } else if (new_dir == MOTOR_DIR_REVERSE) {
+                TIM1->CCER &= ~TIM_CCER_CC3E;
+                TIM1->CCER |= TIM_CCER_CC3NE;
+            } else {
+                TIM1->CCER &= ~(TIM_CCER_CC3E | TIM_CCER_CC3NE);
+            }
+            TIM1->CCR3 = duty;
+            break;
+
+        case 3: // Motor 4: TIM10_CH1 (PB8) & TIM11_CH1 (PB9)
+            if (new_dir == MOTOR_DIR_FORWARD) {
+                TIM10->CCR1 = duty;
+                TIM11->CCR1 = 0;
+            } else if (new_dir == MOTOR_DIR_REVERSE) {
+                TIM10->CCR1 = 0;
+                TIM11->CCR1 = duty;
+            } else {
+                TIM10->CCR1 = 0;
+                TIM11->CCR1 = 0;
+            }
+            break;
+    }
+
+    state[id].direction = new_dir;
+    state[id].pwm_duty = duty;
+    state[id].enabled = (new_dir != MOTOR_DIR_COAST);
+}
+
+void Motor_Coast(uint8_t id)
+{
+    Motor_Set(id, 0);
+}
+
+void Motor_CoastAll(void)
+{
+    for (uint8_t i = 0; i < MOTOR_COUNT; i++) Motor_Coast(i);
+}
+
+void Motor_EmergencyStop(void)
+{
+    Motor_CoastAll();
+}
+
+MotorState_t Motor_GetState(uint8_t id)
+{
+    return state[id];
+}

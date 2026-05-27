@@ -3,11 +3,19 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="true"/>
 	<list key="replacehistory">
+		<item value="Prescaler = 19"/>
 		<item value="Filter = 4"/>
 		<item value="uint32"/>
 		<item value="uint8"/>
 	</list>
 	<list key="searchhistory">
+		<item value="SystemClock_Config"/>
+		<item value="Prescaler ="/>
+		<item value="Prescaler = 0"/>
+		<item value="presca"/>
+		<item value="MSG_IMU_DATA"/>
+		<item value="COMM_IMU_TX_BUF_SIZE"/>
+		<item value="IMUPayload_t"/>
 		<item value="9"/>
 		<item value="921600"/>
 		<item value="GPIO_PIN_8"/>
@@ -16,8 +24,6 @@
 		<item value="HAL_TIM_PeriodElapsedCallback"/>
 		<item value="Filter = 0"/>
 		<item value="Filter ="/>
-		<item value="u32"/>
-		<item value="u8"/>
 	</list>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item key="selection" value="uint8"/>

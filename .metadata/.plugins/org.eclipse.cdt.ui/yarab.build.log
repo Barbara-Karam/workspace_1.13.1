@@ -1,10 +1,10 @@
-01:50:50 **** Incremental Build of configuration Debug for project yarab ****
+20:03:44 **** Incremental Build of configuration Debug for project yarab ****
 make -j12 all 
 arm-none-eabi-size  yarab.elf 
    text	   data	    bss	    dec	    hex	filename
-  37068	     28	   2844	  39940	   9c04	yarab.elf
+  28576	     92	   3204	  31872	   7c80	yarab.elf
 Finished building: default.size.stdout
  
 
-01:50:50 Build Finished. 0 errors, 0 warnings. (took 428ms)
+20:03:44 Build Finished. 0 errors, 0 warnings. (took 543ms)
 

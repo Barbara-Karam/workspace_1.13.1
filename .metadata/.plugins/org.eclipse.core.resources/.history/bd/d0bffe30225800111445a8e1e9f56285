@@ -1,0 +1,230 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file    main.c
+  * @brief   Black Pill — IMU + Motor1 + Encoder1 diagnostic
+  *
+  *  BTS7960 wiring (corrected):
+  *    PA8  → RPWM          PWM signal, forward direction
+  *    PB12 → R_EN          kept HIGH always (chip enable)
+  *    PB13 → L_EN          kept HIGH always (chip enable)
+  *           LPWM → GND    jumper, no STM32 pin needed
+  *
+  *  BTS7960 truth table:
+  *    R_EN=1, L_EN=1, RPWM=PWM, LPWM=0  → Forward
+  *    R_EN=1, L_EN=1, RPWM=0,   LPWM=0  → Coast
+  *    Either EN LOW                       → Nothing works
+  *
+  *  Live Expressions to watch:
+  *    imu_ok           → 1 = IMU alive
+  *    found_addr       → 104 decimal = 0x68 = MPU6050 found
+  *    imu_data.accel_z → ≈ ±9.81 m/s²
+  *    motor1_pwm       → 1000 while running, 0 while coasting
+  *    en_r             → always 1 after init
+  *    en_l             → always 1 after init
+  *    raw_tim2         → changes when encoder shaft spins
+  *    enc_delta        → per-loop signed tick delta (non-zero when spinning)
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+#include "main.h"
+#include "i2c.h"
+#include "tim.h"
+#include "gpio.h"
+#include "imu.h"
+
+/* ── Live Expression globals ──────────────────────────────────────────────── */
+IMUData_t         imu_data;
+uint8_t           imu_ok      = 0;
+uint8_t           found_addr  = 0;
+volatile uint32_t raw_tim2    = 0;   /* raw TIM2 CNT                        */
+volatile int32_t  enc_delta   = 0;   /* signed per-loop delta               */
+volatile int32_t  enc_abs     = 0;   /* absolute accumulation               */
+volatile int16_t  motor1_pwm  = 0;   /* PWM written to TIM1 CCR1            */
+volatile uint8_t  en_r        = 0;   /* R_EN state (PB12) — always 1 after init */
+volatile uint8_t  en_l        = 0;   /* L_EN state (PB13) — always 1 after init */
+
+/* ── Config ──────────────────────────────────────────────────────────────── */
+#define TEST_PWM        1000    /* raw PWM 0–4199 (~24% duty)  */
+#define MOTOR_RUN_MS    3000
+#define MOTOR_PAUSE_MS  2000
+
+void SystemClock_Config(void);
+
+/* ── Motor1 helpers ──────────────────────────────────────────────────────── */
+/*
+ *  Both EN pins stay HIGH the entire time — they enable the BTS7960 chip.
+ *  Direction comes from RPWM (PA8) vs LPWM (tied to GND on the board).
+ *  Forward  : RPWM = PWM duty, LPWM = 0 (GND jumper)
+ *  Coast    : RPWM = 0,        LPWM = 0 (GND jumper)
+ */
+static void motor1_enable_chip(void)
+{
+    /* Both EN HIGH — do this once at startup and never touch again */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);   /* R_EN = 1 */
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);   /* L_EN = 1 */
+    en_r = 1;
+    en_l = 1;
+}
+
+static void motor1_forward(uint16_t pwm)
+{
+    /* EN pins already HIGH — just set RPWM duty */
+    TIM1->CCR1   = pwm;
+    motor1_pwm   = (int16_t)pwm;
+}
+
+static void motor1_coast(void)
+{
+    /* RPWM = 0, LPWM still GND → coast (EN stays HIGH) */
+    TIM1->CCR1   = 0;
+    motor1_pwm   = 0;
+}
+
+/* ── Main ────────────────────────────────────────────────────────────────── */
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_I2C1_Init();
+    MX_TIM1_Init();   /* Motor1 PWM  */
+    MX_TIM2_Init();   /* Encoder1    */
+
+    HAL_Delay(300);
+
+    /* ── Start TIM1 PWM on CH1 ─────────────────────────────────────────── */
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    __HAL_TIM_MOE_ENABLE(&htim1);
+
+    /* Enable BTS7960 chip immediately — stays enabled forever */
+    motor1_enable_chip();
+    motor1_coast();    /* RPWM = 0 safe default */
+
+    /* ── Start TIM2 in encoder mode ──────────────────────────────────────── */
+    HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+
+    /* ── I2C scan ───────────────────────────────────────────────────────── */
+    for (uint8_t addr = 1; addr < 128; addr++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1,
+                (uint16_t)(addr << 1), 2, 10) == HAL_OK) {
+            found_addr = addr;
+        }
+    }
+
+    /* ── IMU Init ───────────────────────────────────────────────────────── */
+    if (found_addr == 0x68) {
+        if (IMU_Init() == HAL_OK) {
+            imu_ok = 1;
+            for (int i = 0; i < 6; i++) {   /* 6 fast blinks = IMU OK */
+                HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+                HAL_Delay(100);
+            }
+        }
+    } else {
+        for (int i = 0; i < 10; i++) {      /* 10 blinks = IMU not found */
+            HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+            HAL_Delay(80);
+        }
+    }
+
+    /* ── State ──────────────────────────────────────────────────────────── */
+    uint32_t last_imu_ms    = 0;
+    uint32_t motor_tick_ms  = HAL_GetTick();
+    uint8_t  motor_on       = 1;
+    uint32_t last_raw_enc   = TIM2->CNT;   /* for per-tick delta */
+
+    motor1_forward(TEST_PWM);   /* start immediately */
+
+    /* ── Main Loop ──────────────────────────────────────────────────────── */
+    while (1)
+    {
+        uint32_t now = HAL_GetTick();
+
+        /* ── IMU @ 50 Hz ──────────────────────────────────────────────── */
+        if ((now - last_imu_ms) >= 20)
+        {
+            last_imu_ms = now;
+            if (imu_ok) {
+                IMUData_t local;
+                if (IMU_Read(&local) == HAL_OK) {
+                    __disable_irq();
+                    imu_data = local;
+                    __enable_irq();
+                }
+            }
+        }
+
+        /* ── Encoder — per-loop signed delta ─────────────────────────── */
+        /*
+         *  raw_tim2  : live counter, watch this first — must change when
+         *              shaft spins. If stuck, TIM2 not in encoder mode in .ioc
+         *
+         *  enc_delta : signed counts since last loop iteration.
+         *              Non-zero only while motor spins. Use this to verify
+         *              direction: positive = forward, negative = reversed wires.
+         *
+         *  enc_abs   : signed absolute position accumulation.
+         *
+         *  Correct delta for 32-bit timer with sign-safe cast:
+         *    int32_t cast of (new - old) handles wrap at 0 and 0xFFFFFFFF.
+         */
+        raw_tim2  = TIM2->CNT;
+        enc_delta = (int32_t)(raw_tim2 - last_raw_enc);
+        enc_abs  += enc_delta;
+        last_raw_enc = raw_tim2;
+
+        /* ── Motor run/coast cycle ────────────────────────────────────── */
+        if (motor_on && (now - motor_tick_ms) >= MOTOR_RUN_MS) {
+            motor1_coast();
+            motor_on      = 0;
+            motor_tick_ms = now;
+        }
+        else if (!motor_on && (now - motor_tick_ms) >= MOTOR_PAUSE_MS) {
+            motor1_forward(TEST_PWM);
+            motor_on      = 1;
+            motor_tick_ms = now;
+        }
+
+        /* ── Heartbeat LED ────────────────────────────────────────────── */
+        HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin,
+            (now % 1000) < 500 ? GPIO_PIN_RESET : GPIO_PIN_SET);
+
+        HAL_Delay(5);
+    }
+}
+
+/* ── System Clock: HSE 25MHz → PLL → 84MHz ──────────────────────────────── */
+void SystemClock_Config(void)
+{
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+    RCC_OscInitStruct.OscillatorType  = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState        = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState    = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource   = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM        = 25;
+    RCC_OscInitStruct.PLL.PLLN        = 168;
+    RCC_OscInitStruct.PLL.PLLP        = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ        = 4;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+
+    RCC_ClkInitStruct.ClockType       = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
+                                      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) Error_Handler();
+}
+
+void Error_Handler(void)
+{
+    __disable_irq();
+    while (1) {}
+}

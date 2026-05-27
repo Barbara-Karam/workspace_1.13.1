@@ -1,0 +1,29 @@
+#include "main.h"
+
+int main(void)
+{
+    HAL_Init();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /* Turn PA8 (RPWM) and PA7 (LPWM) into dumb, raw output pins */
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* BLAST FULL POWER FORWARD */
+    /* PA8 = 3.3V (High), PA7 = 0V (Ground) */
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+
+    while (1)
+    {
+        // Just sit here forever.
+    }
+}
+
+void Error_Handler(void) {
+    while(1) {}
+}

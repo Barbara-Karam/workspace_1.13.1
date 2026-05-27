@@ -1,0 +1,220 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Black Pill — Bidirectional Motor Test + Binary Telemetry
+  *
+  * WIRING:
+  * PA8  -> BTS7960 RPWM (Forward)
+  * PA9  -> BTS7960 LPWM (Reverse)
+  * 5V   -> BTS7960 R_EN (Hardwired)
+  * 5V   -> BTS7960 L_EN (Hardwired)
+  * PA5  -> Encoder A (TIM2 CH1)
+  * PB3  -> Encoder B (TIM2 CH2)
+  * PA2  -> UART TX to Jetson RX
+  * PA3  -> UART RX to Jetson TX
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+
+#include "main.h"
+#include "dma.h"
+#include "i2c.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
+#include "imu.h"
+#include "comm.h"
+
+/* ── Live Expression globals ─────────────────────────────────────────────── */
+IMUData_t        imu_data;
+uint8_t          imu_ok     = 0;
+uint8_t          found_addr = 0;
+
+volatile uint32_t raw_tim2   = 0;
+volatile int32_t  enc_delta  = 0;
+volatile int32_t  enc_abs    = 0;
+volatile int16_t  motor1_pwm = 0;  /* positive = FWD, negative = REV */
+
+/* ── Config ──────────────────────────────────────────────────────────────── */
+#define TEST_PWM        3500    /* SPEED: 0 (stopped) to 4199 (100% max speed) */
+#define STATE_DELAY_MS  5000    /* TIME: How long each step takes in ms */
+
+void SystemClock_Config(void);
+
+/* ── Motor1 helpers ──────────────────────────────────────────────────────── */
+/*
+ * Hardware assumption: R_EN and L_EN are physically tied to 5V.
+ * Forward: PA8 (CH1) = PWM, PA9 (CH2) = 0
+ * Reverse: PA8 (CH1) = 0,   PA9 (CH2) = PWM
+ * Coast:   PA8 (CH1) = 0,   PA9 (CH2) = 0
+ */
+static void motor1_forward(uint16_t pwm)
+{
+    TIM1->CCR2 = 0;       /* Turn off reverse channel */
+    TIM1->CCR1 = pwm;     /* Turn on forward channel */
+    motor1_pwm = (int16_t)pwm;
+}
+
+static void motor1_reverse(uint16_t pwm)
+{
+    TIM1->CCR1 = 0;       /* Turn off forward channel */
+    TIM1->CCR2 = pwm;     /* Turn on reverse channel */
+    motor1_pwm = -(int16_t)pwm;
+}
+
+static void motor1_coast(void)
+{
+    TIM1->CCR1 = 0;
+    TIM1->CCR2 = 0;
+    motor1_pwm = 0;
+}
+
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+
+    MX_GPIO_Init();
+    MX_DMA_Init();         /* CRITICAL: DMA must be init BEFORE USART */
+    MX_USART2_UART_Init();
+    MX_I2C1_Init();
+    MX_TIM1_Init();
+    MX_TIM2_Init();
+
+    /* Start the custom binary protocol listener */
+    Comm_Init();
+
+    HAL_Delay(300);
+
+    /* ── Start TIM1 PWM on CH1 (PA8) and CH2 (PA9) ───────────────────────── */
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+    __HAL_TIM_MOE_ENABLE(&htim1);
+
+    motor1_coast();
+
+    /* ── Start TIM2 in encoder mode ──────────────────────────────────────── */
+    HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+
+    /* ── I2C scan ────────────────────────────────────────────────────────── */
+    for (uint8_t addr = 1; addr < 128; addr++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, (uint16_t)(addr << 1), 2, 10) == HAL_OK) {
+            found_addr = addr;
+        }
+    }
+
+    /* ── IMU Init ────────────────────────────────────────────────────────── */
+    if (found_addr == 0x68) {
+        if (IMU_Init() == HAL_OK) {
+            imu_ok = 1;
+            for (int i = 0; i < 6; i++) {   /* 6 fast blinks = OK */
+                HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+                HAL_Delay(100);
+            }
+        }
+    } else {
+        for (int i = 0; i < 10; i++) {      /* 10 blinks = not found */
+            HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+            HAL_Delay(80);
+        }
+    }
+
+    /* ── State ───────────────────────────────────────────────────────────── */
+    uint32_t last_imu_ms   = 0;
+    uint32_t motor_tick_ms = HAL_GetTick();
+    uint32_t last_raw_enc  = TIM2->CNT;
+
+    uint8_t  motor_state = 0; /* 0:FWD, 1:COAST, 2:REV, 3:COAST */
+
+    motor1_forward(TEST_PWM);
+
+    /* ── Main Loop ───────────────────────────────────────────────────────── */
+    while (1)
+    {
+        uint32_t now = HAL_GetTick();
+
+        /* Process incoming UART commands/heartbeats */
+        Comm_ProcessRx();
+
+        /* ── IMU @ 50 Hz ─────────────────────────────────────────────────── */
+        if ((now - last_imu_ms) >= 20)
+        {
+            last_imu_ms = now;
+            if (imu_ok) {
+                IMUData_t local;
+                if (IMU_Read(&local) == HAL_OK) {
+                    __disable_irq();
+                    imu_data = local;
+                    __enable_irq();
+
+                    /* Blast data to Jetson via DMA */
+                    Comm_TransmitIMU(&imu_data);
+                }
+            }
+        }
+
+        /* ── Encoder ─────────────────────────────────────────────────────── */
+        raw_tim2  = TIM2->CNT;
+        enc_delta = (int32_t)(raw_tim2 - last_raw_enc);
+        enc_abs  += enc_delta;
+        last_raw_enc = raw_tim2;
+
+        /* ── Motor State Machine ─────────────────────────────────────────── */
+        if ((now - motor_tick_ms) >= STATE_DELAY_MS) {
+            motor_tick_ms = now;
+            motor_state = (motor_state + 1) % 4;
+
+            if (motor_state == 0) {
+                motor1_forward(TEST_PWM);
+            } else if (motor_state == 1) {
+                motor1_coast();
+            } else if (motor_state == 2) {
+                motor1_reverse(TEST_PWM);
+            } else if (motor_state == 3) {
+                motor1_coast();
+            }
+        }
+
+        /* ── Heartbeat LED ───────────────────────────────────────────────── */
+        HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin,
+            (now % 1000) < 500 ? GPIO_PIN_RESET : GPIO_PIN_SET);
+
+        HAL_Delay(5);
+    }
+}
+
+/* ── System Clock: HSE 25MHz → PLL → 84MHz ───────────────────────────────── */
+void SystemClock_Config(void)
+{
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+    RCC_OscInitStruct.OscillatorType  = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState        = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState    = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource   = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM        = 25;
+    RCC_OscInitStruct.PLL.PLLN        = 168;
+    RCC_OscInitStruct.PLL.PLLP        = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ        = 4;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+
+    RCC_ClkInitStruct.ClockType       = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
+                                      | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource    = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider   = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider  = RCC_HCLK_DIV2;
+    RCC_ClkInitStruct.APB2CLKDivider  = RCC_HCLK_DIV1;
+
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) Error_Handler();
+}
+
+void Error_Handler(void)
+{
+    __disable_irq();
+    while (1) {}
+}
