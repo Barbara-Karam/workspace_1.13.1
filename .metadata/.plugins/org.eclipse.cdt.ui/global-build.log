@@ -1,218 +1,82 @@
-17:21:23 **** Incremental Build of configuration Debug for project yarab ****
+17:16:03 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/comm.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/comm.d" -MT"Core/Src/comm.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/comm.o"
-arm-none-eabi-gcc "../Core/Src/dma.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/dma.d" -MT"Core/Src/dma.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/dma.o"
-arm-none-eabi-gcc "../Core/Src/encoder.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/encoder.d" -MT"Core/Src/encoder.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/encoder.o"
-arm-none-eabi-gcc "../Core/Src/gpio.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/gpio.d" -MT"Core/Src/gpio.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/gpio.o"
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc "../Core/Src/motor_control.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/motor_control.d" -MT"Core/Src/motor_control.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/motor_control.o"
 arm-none-eabi-gcc "../Core/Src/stm32f4xx_hal_msp.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_hal_msp.d" -MT"Core/Src/stm32f4xx_hal_msp.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_hal_msp.o"
-arm-none-eabi-gcc "../Core/Src/stm32f4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32f4xx_it.d" -MT"Core/Src/stm32f4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32f4xx_it.o"
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc "../Core/Src/usart.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/usart.d" -MT"Core/Src/usart.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/usart.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/main.o: in function `main':
-C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/main.c:10:(.text.main+0x8): undefined reference to `SystemClock_Config'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/tim.o: in function `MX_TIM1_Init':
-C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:59:(.text.MX_TIM1_Init+0x68): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:65:(.text.MX_TIM1_Init+0x86): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:76:(.text.MX_TIM1_Init+0xba): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:80:(.text.MX_TIM1_Init+0xd2): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:84:(.text.MX_TIM1_Init+0xea): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/tim.o:C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:95: more undefined references to `Error_Handler' follow
-collect2.exe: error: ld returned 1 exit status
-make: *** [makefile:70: yarab.elf] Error 1
-"make -j12 all" terminated with exit code 2. Build might be incomplete.
-17:22:10 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/main.o: in function `main':
-C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/main.c:10:(.text.main+0x8): undefined reference to `SystemClock_Config'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/tim.o: in function `MX_TIM1_Init':
-C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:59:(.text.MX_TIM1_Init+0x68): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:65:(.text.MX_TIM1_Init+0x86): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:76:(.text.MX_TIM1_Init+0xba): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:80:(.text.MX_TIM1_Init+0xd2): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:84:(.text.MX_TIM1_Init+0xea): undefined reference to `Error_Handler'
-C:/ST/STM32CubeIDE_1.13.1/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.win32_1.0.0.202411081344/tools/bin/../lib/gcc/arm-none-eabi/13.3.1/../../../../arm-none-eabi/bin/ld.exe: ./Core/Src/tim.o:C:/Users/brbar/STM32CubeIDE/workspace_1.13.1/RPOD-Chaser2/RPOD-Chaser/Debug/../Core/Src/tim.c:95: more undefined references to `Error_Handler' follow
-collect2.exe: error: ld returned 1 exit status
-make: *** [makefile:70: yarab.elf] Error 1
-"make -j12 all" terminated with exit code 2. Build might be incomplete.
-17:25:01 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
+arm-none-eabi-gcc -o "Docking_Arms.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\Docking_Arms\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Docking_Arms.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Docking_Arms.elf
  
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
+arm-none-eabi-size  Docking_Arms.elf 
+arm-none-eabi-objdump -h -S Docking_Arms.elf  > "Docking_Arms.list"
+arm-none-eabi-objcopy  -O ihex Docking_Arms.elf  "Docking_Arms.hex"
    text	   data	    bss	    dec	    hex	filename
-  16340	     12	   2252	  18604	   48ac	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
+  45624	    468	   2236	  48328	   bcc8	Docking_Arms.elf
+arm-none-eabi-objcopy  -O binary Docking_Arms.elf  "Docking_Arms.bin"
 Finished building: default.size.stdout
  
-Finished building: yarab.hex
-Finished building: yarab.bin
- 
-Finished building: yarab.list
+Finished building: Docking_Arms.hex
+Finished building: Docking_Arms.bin
  
  
-17:33:54 **** Incremental Build of configuration Debug for project yarab ****
+Finished building: Docking_Arms.list
+ 
+17:21:56 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-size  yarab.elf 
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  16340	     12	   2252	  18604	   48ac	yarab.elf
+  45624	    468	   2236	  48328	   bcc8	Docking_Arms.elf
 Finished building: default.size.stdout
  
-18:11:30 **** Incremental Build of configuration Debug for project yarab ****
+17:30:39 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
+arm-none-eabi-gcc "../Core/Src/imu.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/imu.d" -MT"Core/Src/imu.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/imu.o"
+arm-none-eabi-gcc -o "Docking_Arms.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\Docking_Arms\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Docking_Arms.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Docking_Arms.elf
  
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
+arm-none-eabi-size  Docking_Arms.elf 
+arm-none-eabi-objdump -h -S Docking_Arms.elf  > "Docking_Arms.list"
+arm-none-eabi-objcopy  -O ihex Docking_Arms.elf  "Docking_Arms.hex"
    text	   data	    bss	    dec	    hex	filename
-  16368	     12	   2252	  18632	   48c8	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
+arm-none-eabi-objcopy  -O binary Docking_Arms.elf  "Docking_Arms.bin"
 Finished building: default.size.stdout
  
-Finished building: yarab.hex
-Finished building: yarab.bin
+Finished building: Docking_Arms.hex
+Finished building: Docking_Arms.bin
  
  
-Finished building: yarab.list
+Finished building: Docking_Arms.list
  
-18:54:39 **** Incremental Build of configuration Debug for project yarab ****
+15:43:28 **** Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
- 
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  19312	     12	   2660	  21984	   55e0	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
 Finished building: default.size.stdout
  
-Finished building: yarab.hex
-Finished building: yarab.bin
- 
- 
-Finished building: yarab.list
- 
-18:57:45 **** Incremental Build of configuration Debug for project yarab ****
+15:44:24 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-size  yarab.elf 
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  19312	     12	   2660	  21984	   55e0	yarab.elf
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
 Finished building: default.size.stdout
  
-18:58:49 **** Incremental Build of configuration Debug for project yarab ****
+15:44:45 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
- 
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  16368	     12	   2252	  18632	   48c8	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
 Finished building: default.size.stdout
  
-Finished building: yarab.hex
-Finished building: yarab.bin
- 
- 
-Finished building: yarab.list
- 
-19:02:03 **** Incremental Build of configuration Debug for project yarab ****
+15:45:33 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
- 
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  17476	     12	   2324	  19812	   4d64	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
 Finished building: default.size.stdout
  
-Finished building: yarab.hex
-Finished building: yarab.bin
- 
- 
-Finished building: yarab.list
- 
-19:03:22 **** Incremental Build of configuration Debug for project yarab ****
+15:46:26 **** Incremental Build of configuration Debug for project Docking_Arms ****
 make -j12 all 
-arm-none-eabi-size  yarab.elf 
+arm-none-eabi-size  Docking_Arms.elf 
    text	   data	    bss	    dec	    hex	filename
-  17476	     12	   2324	  19812	   4d64	yarab.elf
-Finished building: default.size.stdout
- 
-19:43:49 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
- 
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
-   text	   data	    bss	    dec	    hex	filename
-  19672	     12	   2660	  22344	   5748	yarab.elf
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
-Finished building: default.size.stdout
- 
-Finished building: yarab.hex
-Finished building: yarab.bin
- 
- 
-Finished building: yarab.list
- 
-19:51:26 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-size  yarab.elf 
-   text	   data	    bss	    dec	    hex	filename
-  19672	     12	   2660	  22344	   5748	yarab.elf
-Finished building: default.size.stdout
- 
-20:03:18 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc -o "yarab.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\RPOD-Chaser2\RPOD-Chaser\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="yarab.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: yarab.elf
- 
-arm-none-eabi-size  yarab.elf 
-arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
-arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
-arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
-   text	   data	    bss	    dec	    hex	filename
-  28576	     92	   3204	  31872	   7c80	yarab.elf
-Finished building: default.size.stdout
- 
-Finished building: yarab.bin
-Finished building: yarab.hex
- 
- 
-Finished building: yarab.list
- 
-20:03:44 **** Incremental Build of configuration Debug for project yarab ****
-make -j12 all 
-arm-none-eabi-size  yarab.elf 
-   text	   data	    bss	    dec	    hex	filename
-  28576	     92	   3204	  31872	   7c80	yarab.elf
+  45680	    468	   2236	  48384	   bd00	Docking_Arms.elf
 Finished building: default.size.stdout
  

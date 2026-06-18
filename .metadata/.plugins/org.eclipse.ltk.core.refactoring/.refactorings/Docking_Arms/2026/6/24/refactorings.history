@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;Docking_Arms/Core/Src/gpio&apos; to &apos;gpio.c&apos;" description="Rename resource &apos;gpio&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Src/gpio" name="gpio.c" stamp="1781013400611" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;Docking_Arms/Core/Inc/IMU.h&apos; to &apos;imu.h&apos;" description="Rename resource &apos;IMU.h&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Core/Inc/IMU.h" name="imu.h" stamp="1781014077190" updateReferences="true"/>
+</session>

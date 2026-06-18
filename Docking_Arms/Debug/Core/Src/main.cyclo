@@ -1,0 +1,9 @@
+../Core/Src/main.c:72:13:motorA_set	5
+../Core/Src/main.c:94:13:motorB_set	5
+../Core/Src/main.c:114:13:motors_stop	1
+../Core/Src/main.c:121:13:UART_Print	1
+../Core/Src/main.c:127:13:parse_command	8
+../Core/Src/main.c:148:6:HAL_UART_RxCpltCallback	5
+../Core/Src/main.c:167:5:main	15
+../Core/Src/main.c:292:6:SystemClock_Config	3
+../Core/Src/main.c:320:6:Error_Handler	1

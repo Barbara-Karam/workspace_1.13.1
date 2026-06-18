@@ -5,3 +5,4 @@ raw_tim2
 found_addr
 imu_ok
 enc_abs
+imu_data.accel_z

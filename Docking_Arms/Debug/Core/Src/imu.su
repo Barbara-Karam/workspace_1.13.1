@@ -1,0 +1,2 @@
+../Core/Src/imu.c:9:19:IMU_Init	32	static
+../Core/Src/imu.c:38:19:IMU_Read	64	static
