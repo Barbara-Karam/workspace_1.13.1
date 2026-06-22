@@ -1,0 +1,6 @@
+../Core/Src/motor_control.c:20:6:Motor_Init	8	static
+../Core/Src/motor_control.c:34:6:Motor_Set	24	static
+../Core/Src/motor_control.c:87:6:Motor_Coast	16	static
+../Core/Src/motor_control.c:92:6:Motor_CoastAll	16	static
+../Core/Src/motor_control.c:97:6:Motor_EmergencyStop	8	static
+../Core/Src/motor_control.c:102:14:Motor_GetState	16	static

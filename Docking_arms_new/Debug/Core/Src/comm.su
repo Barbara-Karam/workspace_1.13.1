@@ -1,0 +1,8 @@
+../Core/Src/comm.c:32:16:crc8	24	static
+../Core/Src/comm.c:45:16:build_frame	32	static
+../Core/Src/comm.c:60:13:uart_tx	16	static
+../Core/Src/comm.c:66:6:Comm_Init	8	static
+../Core/Src/comm.c:74:6:HAL_UARTEx_RxEventCallback	16	static
+../Core/Src/comm.c:84:6:Comm_RxEventCallback	32	static
+../Core/Src/comm.c:133:6:Comm_ProcessRx	16	static
+../Core/Src/comm.c:143:6:Comm_TransmitFeedback	48	static

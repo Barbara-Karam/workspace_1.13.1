@@ -1,0 +1,156 @@
+/**
+  ******************************************************************************
+  * @file    main.c
+  * @brief   RPOD Lifter - Low Level Controller
+  *          Hardware: STM32F401RCT6 (Black Pill)
+  *          Clock:    HSE 25MHz -> PLL -> 84MHz
+  *
+  *  Responsibilities:
+  *    - 2x TQ42-772 DC motors via BTS7960 (TIM1, 1kHz PWM)
+  *    - 1x IMU via I2C1 (MPU6050 or ICM-42688, selectable in imu.h)
+  *    - 4x Limit switches via EXTI (PC0-PC3, active-low)
+  *    - Binary-framed UART to Jetson Orin Nano (921600 baud, DMA)
+  *    - 50Hz main control loop (20ms tick via HAL_GetTick)
+  *
+  *  Control loop (50Hz):
+  *    1. Read IMU
+  *    2. Apply latest PWM targets from Jetson (or 0 if e-stop)
+  *    3. Halt motors if any limit switch is triggered
+  *    4. Transmit full telemetry feedback
+  ******************************************************************************
+  */
+#include "main.h"
+#include "dma.h"
+#include "gpio.h"
+#include "i2c.h"
+#include "tim.h"
+#include "usart.h"
+#include "motor_control.h"
+#include "limit_switch.h"
+#include "imu.h"
+#include "comm.h"
+
+void SystemClock_Config(void);
+
+/* Shared with comm.c */
+extern volatile int16_t  g_target_pwm[2];
+extern volatile uint8_t  g_estop_active;
+extern volatile uint8_t  g_feedback_ready;
+extern IMU_Data_t         g_imu_data;
+
+int main(void)
+{
+    /* ── HAL + Clock ──────────────────────────────────────────────────── */
+    HAL_Init();
+    SystemClock_Config();
+
+    /* ── Peripheral Init ─────────────────────────────────────────────── */
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_USART2_UART_Init();
+    MX_I2C1_Init();
+    MX_TIM1_Init();
+
+    /* ── Driver Init ─────────────────────────────────────────────────── */
+    HAL_Delay(200);             /* Let power rails settle               */
+
+    Motor_Init();               /* Starts TIM1 PWM, coasts all motors   */
+    LimitSwitch_Init();         /* No-op currently; EXTI set in gpio.c  */
+
+    /* IMU init - non-fatal: we report imu_valid=0 if it fails */
+    if (IMU_Init() != HAL_OK) {
+        g_imu_data.valid = 0;
+    }
+
+    Comm_Init();                /* Arm DMA idle-line UART RX             */
+
+    /* ── Main Loop ───────────────────────────────────────────────────── */
+    uint32_t last_loop_ms = HAL_GetTick();
+
+    while (1)
+    {
+        uint32_t now = HAL_GetTick();
+
+        /* ── 50Hz Control Loop (every 20ms) ─────────────────────────── */
+        if (now - last_loop_ms >= 20)
+        {
+            last_loop_ms = now;
+
+            /* 1. Read IMU */
+            IMU_Read(&g_imu_data);
+
+            /* 2. Check limit switches - stop motors if any are triggered */
+            uint8_t sw_mask = LimitSwitch_ReadAll();
+            if (sw_mask != 0)
+            {
+                /* Limit hit: coast all motors; Jetson will see LIMIT_HIT in status */
+                Motor_CoastAll();
+            }
+            else if (!g_estop_active)
+            {
+                /* 3. Apply Jetson PWM commands */
+                Motor_Set(0, g_target_pwm[0]);
+                Motor_Set(1, g_target_pwm[1]);
+            }
+            else
+            {
+                /* E-stop active: hold coast */
+                Motor_CoastAll();
+            }
+
+            /* 4. Flag feedback ready for TX */
+            g_feedback_ready = 1;
+            Comm_TransmitFeedback();
+        }
+
+        /* ── Handle any pending RX processing (heartbeat reply) ─────── */
+        Comm_ProcessRx();
+
+        /* ── Status LED: blink 1Hz normal, fast blink on e-stop ─────── */
+        uint32_t blink_period = g_estop_active ? 100u : 1000u;
+        HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin,
+                          (now % blink_period) < (blink_period / 2)
+                          ? GPIO_PIN_RESET   /* LED on  (active low) */
+                          : GPIO_PIN_SET);   /* LED off              */
+    }
+}
+
+/* ── System Clock: HSE 25MHz -> PLL -> 84MHz ────────────────────────────── */
+void SystemClock_Config(void)
+{
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState       = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM       = 25;
+    RCC_OscInitStruct.PLL.PLLN       = 336;
+    RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV4;
+    RCC_OscInitStruct.PLL.PLLQ       = 4;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) { Error_Handler(); }
+
+    RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
+                                     | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) { Error_Handler(); }
+}
+
+void Error_Handler(void)
+{
+    __disable_irq();
+    /* Flash LED rapidly to signal fault */
+    while (1) {
+        HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
+        /* Crude delay without SysTick (it may be broken in Error_Handler) */
+        for (volatile uint32_t i = 0; i < 1000000; i++);
+    }
+}

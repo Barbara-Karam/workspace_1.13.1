@@ -35,290 +35,373 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-
-#include <imu.h>
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "i2c.h"
-#include "tim.h"
-#include "usart.h"
-#include "gpio.h"
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
-/* ── Live Expression globals ─────────────────────────────────────────── */
-IMUData_t        imu_data;
-uint8_t          imu_ok          = 0;
-uint8_t          found_addr      = 0;
-volatile uint8_t sw_state        = 0;  /* bit0=SW1 bit1=SW2 bit2=SW3 bit3=SW4 */
-volatile uint8_t docking_detected = 0; /* 1 = at least one switch triggered   */
-volatile int16_t motor_a_pwm     = 0;  /* -4199 to +4199                      */
-volatile int16_t motor_b_pwm     = 0;
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-/* ── UART receive buffer ─────────────────────────────────────────────── */
-#define RX_BUF_LEN  64
-static char     rx_buf[RX_BUF_LEN];
-static uint8_t  rx_byte;              /* single byte DMA target              */
-static uint8_t  rx_idx   = 0;
-static uint8_t  cmd_ready = 0;
+/* USER CODE END Includes */
 
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
+TIM_HandleTypeDef htim1;
+
+UART_HandleTypeDef huart2;
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void UART_Print(const char *str);
-static void parse_command(const char *line);
+static void MX_GPIO_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_USART2_UART_Init(void);
+/* USER CODE BEGIN PFP */
 
-/* ── Motor helpers ───────────────────────────────────────────────────── */
+/* USER CODE END PFP */
 
-/* Set motor A, speed -100 to +100 percent */
-static void motorA_set(int8_t pct)
-{
-    uint16_t duty = (uint16_t)(abs(pct) * 4199 / 100);
-    if (duty > 4199) duty = 4199;
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
-    if (pct > 0) {
-        HAL_GPIO_WritePin(M_A_R_EN_GPIO_Port, M_A_R_EN_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(M_A_L_EN_GPIO_Port, M_A_L_EN_Pin, GPIO_PIN_RESET);
-    } else if (pct < 0) {
-        HAL_GPIO_WritePin(M_A_R_EN_GPIO_Port, M_A_R_EN_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(M_A_L_EN_GPIO_Port, M_A_L_EN_Pin, GPIO_PIN_SET);
-    } else {
-        /* Coast */
-        HAL_GPIO_WritePin(M_A_R_EN_GPIO_Port, M_A_R_EN_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(M_A_L_EN_GPIO_Port, M_A_L_EN_Pin, GPIO_PIN_RESET);
-        duty = 0;
-    }
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty);
-    motor_a_pwm = (pct >= 0) ? (int16_t)duty : -(int16_t)duty;
-}
+/* USER CODE END 0 */
 
-/* Set motor B, speed -100 to +100 percent */
-static void motorB_set(int8_t pct)
-{
-    uint16_t duty = (uint16_t)(abs(pct) * 4199 / 100);
-    if (duty > 4199) duty = 4199;
-
-    if (pct > 0) {
-        HAL_GPIO_WritePin(M_B_R_EN_GPIO_Port, M_B_R_EN_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(M_B_L_EN_GPIO_Port, M_B_L_EN_Pin, GPIO_PIN_RESET);
-    } else if (pct < 0) {
-        HAL_GPIO_WritePin(M_B_R_EN_GPIO_Port, M_B_R_EN_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(M_B_L_EN_GPIO_Port, M_B_L_EN_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(M_B_R_EN_GPIO_Port, M_B_R_EN_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(M_B_L_EN_GPIO_Port, M_B_L_EN_Pin, GPIO_PIN_RESET);
-        duty = 0;
-    }
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, duty);
-    motor_b_pwm = (pct >= 0) ? (int16_t)duty : -(int16_t)duty;
-}
-
-static void motors_stop(void)
-{
-    motorA_set(0);
-    motorB_set(0);
-}
-
-/* ── UART helpers ────────────────────────────────────────────────────── */
-static void UART_Print(const char *str)
-{
-    HAL_UART_Transmit(&huart2, (uint8_t *)str, (uint16_t)strlen(str), 200);
-}
-
-/* Parse "$CMD,+80,+80" from Jetson */
-static void parse_command(const char *line)
-{
-    if (strncmp(line, "$CMD,", 5) != 0) return;
-
-    int a = 0, b = 0;
-    if (sscanf(line + 5, "%d,%d", &a, &b) == 2) {
-        /* Clamp to -100..+100 */
-        if (a >  100) a =  100;
-        if (a < -100) a = -100;
-        if (b >  100) b =  100;
-        if (b < -100) b = -100;
-
-        /* Safety: ignore commands if docking already detected */
-        if (!docking_detected) {
-            motorA_set((int8_t)a);
-            motorB_set((int8_t)b);
-        }
-    }
-}
-
-/* ── UART RX callback (byte by byte) ────────────────────────────────── */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance != USART2) return;
-
-    char c = (char)rx_byte;
-
-    if (c == '\n') {
-        rx_buf[rx_idx] = '\0';
-        cmd_ready = 1;
-        rx_idx = 0;
-    } else if (c != '\r') {
-        if (rx_idx < RX_BUF_LEN - 1)
-            rx_buf[rx_idx++] = c;
-    }
-
-    /* Re-arm receive */
-    HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
-}
-
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
-    /* ── Init ────────────────────────────────────────────────────────── */
-    HAL_Init();
-    SystemClock_Config();
-    MX_GPIO_Init();
-    MX_I2C1_Init();
-    MX_TIM1_Init();
-    MX_USART2_UART_Init();
 
-    HAL_Delay(300);
+  /* USER CODE BEGIN 1 */
 
-    /* ── Motors safe state ───────────────────────────────────────────── */
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-    __HAL_TIM_MOE_ENABLE(&htim1);   /* TIM1 advanced timer — must enable */
-    motors_stop();
+  /* USER CODE END 1 */
 
-    /* ── Start UART receive interrupt ───────────────────────────────── */
-    HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+  /* MCU Configuration--------------------------------------------------------*/
 
-    /* ── I2C scan ────────────────────────────────────────────────────── */
-    for (uint8_t addr = 1; addr < 128; addr++) {
-        if (HAL_I2C_IsDeviceReady(&hi2c1,
-                (uint16_t)(addr << 1), 2, 10) == HAL_OK) {
-            found_addr = addr;
-        }
-    }
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-    /* ── IMU Init ────────────────────────────────────────────────────── */
-    if (found_addr == 0x68) {
-        if (IMU_Init() == HAL_OK) {
-            imu_ok = 1;
-            for (int i = 0; i < 6; i++) {
-                HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
-                HAL_Delay(100);
-            }
-        }
-    } else {
-        for (int i = 0; i < 10; i++) {
-            HAL_GPIO_TogglePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin);
-            HAL_Delay(80);
-        }
-    }
+  /* USER CODE BEGIN Init */
 
-    UART_Print("#BOOT arm_controller ready\r\n");
+  /* USER CODE END Init */
 
-    /* ── State ───────────────────────────────────────────────────────── */
-    uint32_t last_imu_ms  = 0;
-    uint32_t last_tx_ms   = 0;
-    uint32_t last_rein_ms = 0;
-    uint8_t  imu_fails    = 0;
-    char     tx_buf[128];
+  /* Configure the system clock */
+  SystemClock_Config();
 
-    /* ── Main Loop ───────────────────────────────────────────────────── */
-    while (1)
-    {
-        uint32_t now = HAL_GetTick();
+  /* USER CODE BEGIN SysInit */
 
-        /* ── Read limit switches (active LOW) ────────────────────── */
-        uint8_t s1 = !HAL_GPIO_ReadPin(SW1_GPIO_Port, SW1_Pin);
-        uint8_t s2 = !HAL_GPIO_ReadPin(SW2_GPIO_Port, SW2_Pin);
-        uint8_t s3 = !HAL_GPIO_ReadPin(SW3_GPIO_Port, SW3_Pin);
-        uint8_t s4 = !HAL_GPIO_ReadPin(SW4_GPIO_Port, SW4_Pin);
+  /* USER CODE END SysInit */
 
-        sw_state = (s4 << 3) | (s3 << 2) | (s2 << 1) | s1;
-        docking_detected = (sw_state != 0) ? 1 : 0;
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_TIM1_Init();
+  MX_I2C1_Init();
+  MX_USART2_UART_Init();
+  /* USER CODE BEGIN 2 */
 
-        /* ── Auto-stop motors on docking contact ─────────────────── */
-        if (docking_detected) {
-            motors_stop();
-        }
+  /* USER CODE END 2 */
 
-        /* ── Read IMU @ 50 Hz ────────────────────────────────────── */
-        if ((now - last_imu_ms) >= 20)
-        {
-            last_imu_ms = now;
-            if (imu_ok) {
-                IMUData_t local;
-                if (IMU_Read(&local) == HAL_OK) {
-                    imu_fails = 0;
-                    __disable_irq();
-                    imu_data = local;
-                    __enable_irq();
-                } else {
-                    if (++imu_fails >= 10) imu_ok = 0;
-                }
-            } else if ((now - last_rein_ms) >= 3000) {
-                last_rein_ms = now;
-                imu_fails = 0;
-                imu_ok = (IMU_Init() == HAL_OK) ? 1 : 0;
-            }
-        }
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
 
-        /* ── Transmit to Jetson @ 20 Hz ──────────────────────────── */
-        if ((now - last_tx_ms) >= 50)
-        {
-            last_tx_ms = now;
-            snprintf(tx_buf, sizeof(tx_buf),
-                "$ARM,%+.3f,%+.3f,%+.3f,%+.3f,%+.3f,%+.3f,%d,%d,%d,%d\r\n",
-                imu_data.accel_x,
-                imu_data.accel_y,
-                imu_data.accel_z,
-                imu_data.gyro_x,
-                imu_data.gyro_y,
-                imu_data.gyro_z,
-                s1, s2, s3, s4);
-            UART_Print(tx_buf);
-        }
-
-        /* ── Process received command from Jetson ────────────────── */
-        if (cmd_ready) {
-            cmd_ready = 0;
-            parse_command(rx_buf);
-        }
-
-        /* ── Heartbeat LED ───────────────────────────────────────── */
-        HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin,
-            (now % 1000) < 500 ? GPIO_PIN_RESET : GPIO_PIN_SET);
-
-        HAL_Delay(5);
-    }
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
-/* ── Clock: HSI 16MHz → PLL → 84MHz ─────────────────────────────────── */
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
-    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-    __HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+  /** Configure the main internal regulator output voltage
+  */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
 
-    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI;
-    RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
-    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-    RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSI;
-    RCC_OscInitStruct.PLL.PLLM            = 8;   /* 16MHz/8 = 2MHz      */
-    RCC_OscInitStruct.PLL.PLLN            = 168; /* 2×168 = 336MHz VCO  */
-    RCC_OscInitStruct.PLL.PLLP            = RCC_PLLP_DIV4; /* 336/4=84MHz */
-    RCC_OscInitStruct.PLL.PLLQ            = 7;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) Error_Handler();
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 25;
+  RCC_OscInitStruct.PLL.PLLN = 168;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
-    RCC_ClkInitStruct.ClockType           = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK
-                                          | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource        = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider       = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider      = RCC_HCLK_DIV2;  /* 42MHz max */
-    RCC_ClkInitStruct.APB2CLKDivider      = RCC_HCLK_DIV1;
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) Error_Handler();
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 0;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 4199;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+  HAL_TIM_MspPostInit(&htim1);
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 921600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+
+  /* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(STATUS_LED_GPIO_Port, STATUS_LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, M_A_R_EN_Pin|M_A_L_EN_Pin|M_B_R_EN_Pin|M_B_L_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : STATUS_LED_Pin */
+  GPIO_InitStruct.Pin = STATUS_LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(STATUS_LED_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SW1_Pin SW2_Pin SW3_Pin SW4_Pin */
+  GPIO_InitStruct.Pin = SW1_Pin|SW2_Pin|SW3_Pin|SW4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : M_A_R_EN_Pin M_A_L_EN_Pin M_B_R_EN_Pin M_B_L_EN_Pin */
+  GPIO_InitStruct.Pin = M_A_R_EN_Pin|M_A_L_EN_Pin|M_B_R_EN_Pin|M_B_L_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+
+  /* USER CODE END MX_GPIO_Init_2 */
+}
+
+/* USER CODE BEGIN 4 */
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
-    __disable_irq();
-    while (1) {}
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
 }
+#ifdef USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
