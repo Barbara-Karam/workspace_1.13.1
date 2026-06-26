@@ -56,9 +56,18 @@ static uint8_t build_frame(uint8_t *buf, uint8_t msg_type,
     return (uint8_t)(6 + payload_len);
 }
 
+static volatile uint8_t s_tx_busy = 0;
+
 static void uart_tx(uint8_t *buf, uint8_t len)
 {
-    HAL_UART_Transmit(&huart2, buf, len, 10);
+    if (s_tx_busy) return;   // drop this frame rather than block
+    s_tx_busy = 1;
+    HAL_UART_Transmit_DMA(&huart2, buf, len);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) s_tx_busy = 0;
 }
 
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -73,10 +82,17 @@ void Comm_Init(void)
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     if (huart->Instance != USART2) return;
-    Comm_RxEventCallback(size);
-    /* Re-arm */
+
+    // Copy to a local snapshot BEFORE re-arming the DMA
+    uint8_t frame_copy[COMM_RX_BUF_SIZE];
+    memcpy(frame_copy, s_rx_buf, size);
+
+    // Re-arm immediately so we don't miss the next frame
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, s_rx_buf, COMM_RX_BUF_SIZE);
     __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+
+    // Parse from the copy
+    Comm_ParseFrame(frame_copy, size);   // refactored out of RxEventCallback
 }
 
 /* ── Parse received frame ───────────────────────────────────────────────── */
