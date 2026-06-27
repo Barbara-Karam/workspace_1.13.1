@@ -38,6 +38,8 @@ extern "C" {
 /* ── Buffer sizes ────────────────────────────────────────────────────────── */
 #define COMM_RX_BUF_SIZE  64
 #define COMM_TX_BUF_SIZE  64
+#define COMM_MAX_PAYLOAD   58u   /* must be <= COMM_TX_BUF_SIZE - 6 */
+
 
 /* ────────────────────────────────────────────────────────────────────────── */
 /* Jetson -> STM32: Set raw PWM for 2 motors                                */
