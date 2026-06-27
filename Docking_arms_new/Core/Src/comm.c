@@ -130,7 +130,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
 {
     if (huart->Instance != USART2) return;
 
-    uint8_t local_buf[COMM_RX_BUF_SIZE];
+    static uint8_t local_buf[COMM_RX_BUF_SIZE];
     memcpy(local_buf, s_rx_buf, size);
 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart2, s_rx_buf, COMM_RX_BUF_SIZE);
