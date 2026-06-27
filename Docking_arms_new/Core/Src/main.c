@@ -15,9 +15,9 @@
 
 //#define STANDALONE_TEST
 #ifdef STANDALONE_TEST
-#define TEST_RUN_MS    2000u   
-#define TEST_STOP_MS   1000u   
-#define TEST_PWM_DUTY  2000    
+#define TEST_RUN_MS    2000u
+#define TEST_STOP_MS   1000u
+#define TEST_PWM_DUTY  2000
 typedef enum {
     TEST_PHASE_FORWARD = 0,
     TEST_PHASE_STOP_A,
@@ -44,14 +44,14 @@ int main(void)
     MX_I2C1_Init();
     MX_TIM1_Init();
 
-    HAL_Delay(200);             
-    Motor_Init();               
-    LimitSwitch_Init();         
+    HAL_Delay(200);
+    Motor_Init();
+    LimitSwitch_Init();
 
     if (IMU_Init() != HAL_OK) {
         g_imu_data.valid = 0;
     }
-    Comm_Init();                
+    Comm_Init();
 
     uint32_t last_loop_ms = HAL_GetTick();
 
@@ -64,10 +64,20 @@ int main(void)
     {
         uint32_t now = HAL_GetTick();
 
-        if (g_imu_needs_reset) {
+        /* Fix #5: reinitialize I2C peripheral AND reprogram IMU registers after bus fault.
+         * Without IMU_Init() the sensor wakes up unconfigured — scale, DLPF, and sample
+         * rate settings are lost, so imu_valid would return 1 with garbage data. */
+        if (g_imu_needs_reset)
+        {
             g_imu_needs_reset = 0;
             HAL_I2C_DeInit(&hi2c1);
             MX_I2C1_Init();
+            if (IMU_Init() != HAL_OK)
+            {
+                /* Sensor didn't respond — mark invalid and try again next fault */
+                g_imu_data.valid  = 0;
+                g_imu_needs_reset = 1;
+            }
         }
 
         if (now - last_loop_ms >= 20)
