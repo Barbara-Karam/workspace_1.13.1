@@ -13,6 +13,7 @@
 /* ── Internal buffers ────────────────────────────────────────────────────── */
 static uint8_t s_rx_buf[COMM_RX_BUF_SIZE];
 static uint8_t s_tx_buf[COMM_TX_BUF_SIZE];
+static uint8_t s_hb_buf[8]; // Dedicated buffer for heartbeat to prevent DMA corruption
 
 /* ── Shared state ────────────────────────────────────────────────────────── */
 volatile int16_t g_target_pwm[2]  = {0, 0};
@@ -143,8 +144,8 @@ void Comm_ProcessRx(void)
 {
     if (s_hb_pending) {
         s_hb_pending = 0;
-        uint8_t len = build_frame(s_tx_buf, MSG_HEARTBEAT, NULL, 0);
-        uart_tx(s_tx_buf, len);
+        uint8_t len = build_frame(s_hb_buf, MSG_HEARTBEAT, NULL, 0);
+        uart_tx(s_hb_buf, len);
     }
 }
 
