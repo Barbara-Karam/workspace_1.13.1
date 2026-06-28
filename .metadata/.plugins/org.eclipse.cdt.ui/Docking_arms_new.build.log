@@ -1,10 +1,10 @@
-00:53:17 **** Incremental Build of configuration Debug for project Docking_arms_new ****
+10:45:59 **** Incremental Build of configuration Debug for project Docking_arms_new ****
 make -j12 all 
 arm-none-eabi-size  Docking_arms_new.elf 
    text	   data	    bss	    dec	    hex	filename
-  26936	     12	   2268	  29216	   7220	Docking_arms_new.elf
+  26956	     12	   2268	  29236	   7234	Docking_arms_new.elf
 Finished building: default.size.stdout
  
 
-00:53:18 Build Finished. 0 errors, 0 warnings. (took 428ms)
+10:45:59 Build Finished. 0 errors, 0 warnings. (took 373ms)
 
