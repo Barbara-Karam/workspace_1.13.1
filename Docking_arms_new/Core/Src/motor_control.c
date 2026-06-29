@@ -1,21 +1,22 @@
 /**
-  ******************************************************************************
-  * @file    motor_control.c
-  * @brief   2-motor BTS7960 driver for TQ42-772 DC motors via TIM1
-  *          BTS7960 truth table (R_EN & L_EN tied HIGH):
-  *            RPWM = duty, LPWM = 0  -> Forward (CCW looking at shaft)
-  *            RPWM = 0,    LPWM = duty -> Reverse
-  *            RPWM = 0,    LPWM = 0  -> Coast
-  *
-  *          Implementation: enable only one TIM1 channel output at a time.
-  *          The disabled channel's pin is controlled by OSSR (off-state = 0)
-  *          so the inactive side naturally outputs 0V.
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    motor_control.c
+ * @brief   2-motor BTS7960 driver for TQ42-772 DC motors via TIM1
+ * Features: Software slew-rate limiter and deadband
+ ******************************************************************************
+ */
 #include "motor_control.h"
 #include <stdlib.h>
 
+/* ── Slew Rate & Deadband Configuration ──────────────────────────────────── */
+#define PWM_DEADBAND  150
+/* RAMP_STEP: Max PWM change per 20ms loop.
+ * 300 per 20ms means it takes ~280ms to ramp from 4199 to 0.
+ * Adjust this if you want a softer or harder stop. */
+#define PWM_RAMP_STEP 300
+
 static MotorState_t s_state[MOTOR_COUNT];
+static int16_t      s_current_pwm[MOTOR_COUNT] = {0, 0};
 
 void Motor_Init(void)
 {
@@ -31,17 +32,36 @@ void Motor_Init(void)
     Motor_CoastAll();
 }
 
-void Motor_Set(uint8_t id, int16_t pwm_signed)
+void Motor_Set(uint8_t id, int16_t target_pwm_signed)
 {
     if (id >= MOTOR_COUNT) return;
 
-    /* Clamp */
-    if (pwm_signed >  (int16_t)PWM_MAX) pwm_signed =  (int16_t)PWM_MAX;
-    if (pwm_signed < -(int16_t)PWM_MAX) pwm_signed = -(int16_t)PWM_MAX;
+    /* 1. Deadband filter to prevent hunting near zero */
+    if (abs(target_pwm_signed) < PWM_DEADBAND) {
+        target_pwm_signed = 0;
+    }
 
-    uint16_t duty = (uint16_t)abs(pwm_signed);
-    MotorDir_t dir = (pwm_signed > 0) ? MOTOR_DIR_FORWARD :
-                     (pwm_signed < 0) ? MOTOR_DIR_REVERSE : MOTOR_DIR_COAST;
+    /* 2. Clamp target to max allowed PWM */
+    if (target_pwm_signed >  (int16_t)PWM_MAX) target_pwm_signed =  (int16_t)PWM_MAX;
+    if (target_pwm_signed < -(int16_t)PWM_MAX) target_pwm_signed = -(int16_t)PWM_MAX;
+
+    /* 3. Slew-Rate Limiter (Ramp) */
+    int16_t current = s_current_pwm[id];
+
+    if (target_pwm_signed > current) {
+        current += PWM_RAMP_STEP;
+        if (current > target_pwm_signed) current = target_pwm_signed;
+    } else if (target_pwm_signed < current) {
+        current -= PWM_RAMP_STEP;
+        if (current < target_pwm_signed) current = target_pwm_signed;
+    }
+
+    s_current_pwm[id] = current;
+
+    /* 4. Apply current step to hardware */
+    uint16_t duty = (uint16_t)abs(current);
+    MotorDir_t dir = (current > 0) ? MOTOR_DIR_FORWARD :
+                     (current < 0) ? MOTOR_DIR_REVERSE : MOTOR_DIR_COAST;
 
     switch (id)
     {
@@ -84,9 +104,29 @@ void Motor_Set(uint8_t id, int16_t pwm_signed)
     s_state[id].enabled   = (dir != MOTOR_DIR_COAST);
 }
 
+/* Bypass the ramp for instant stops (Limit switches / Estop) */
 void Motor_Coast(uint8_t id)
 {
-    Motor_Set(id, 0);
+    if (id >= MOTOR_COUNT) return;
+
+    /* Reset the internal tracker instantly */
+    s_current_pwm[id] = 0;
+
+    switch (id)
+    {
+        case 0:
+            TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE);
+            TIM1->CCR1 = 0;
+            break;
+        case 1:
+            TIM1->CCER &= ~(TIM_CCER_CC2E | TIM_CCER_CC2NE);
+            TIM1->CCR2 = 0;
+            break;
+    }
+
+    s_state[id].direction = MOTOR_DIR_COAST;
+    s_state[id].pwm_duty  = 0;
+    s_state[id].enabled   = 0;
 }
 
 void Motor_CoastAll(void)
