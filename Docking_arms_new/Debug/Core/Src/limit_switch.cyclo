@@ -1,5 +1,5 @@
-../Core/Src/limit_switch.c:20:6:LimitSwitch_Init	1
-../Core/Src/limit_switch.c:26:9:LimitSwitch_Read	3
-../Core/Src/limit_switch.c:33:9:LimitSwitch_ReadAll	3
-../Core/Src/limit_switch.c:42:9:LimitSwitch_GetEvent	3
-../Core/Src/limit_switch.c:53:6:LimitSwitch_EXTI_Callback	5
+../Core/Src/limit_switch.c:32:6:LimitSwitch_Init	1
+../Core/Src/limit_switch.c:38:9:LimitSwitch_Read	3
+../Core/Src/limit_switch.c:45:9:LimitSwitch_ReadAll	3
+../Core/Src/limit_switch.c:54:9:LimitSwitch_GetEvent	3
+../Core/Src/limit_switch.c:65:6:LimitSwitch_EXTI_Callback	5

@@ -35,8 +35,8 @@ void MX_TIM1_Init(void)
     if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) { Error_Handler(); }
     if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) { Error_Handler(); }
 
-    sBreakDeadTime.OffStateRunMode  = TIM_OSSR_DISABLE;   // was TIM_OSSR_ENABLE
-    sBreakDeadTime.OffStateIDLEMode = TIM_OSSI_DISABLE;   // was TIM_OSSI_ENABLE
+    sBreakDeadTime.OffStateRunMode  = TIM_OSSR_ENABLE;
+    sBreakDeadTime.OffStateIDLEMode = TIM_OSSI_ENABLE;
     sBreakDeadTime.LockLevel        = TIM_LOCKLEVEL_OFF;
     sBreakDeadTime.DeadTime         = 0;
     sBreakDeadTime.BreakState       = TIM_BREAK_DISABLE;

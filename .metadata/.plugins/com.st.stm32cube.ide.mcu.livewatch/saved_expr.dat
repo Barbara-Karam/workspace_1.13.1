@@ -7,4 +7,3 @@ imu_ok
 enc_abs
 imu_data.accel_z
 g_imu_data
-g_estop_active

@@ -169,6 +169,9 @@ void Comm_ProcessRx(void)
 /* ── Transmit full telemetry frame ──────────────────────────────────────── */
 void Comm_TransmitFeedback(void)
 {
+    /* FIX #1: Prevent buffer overwrite if DMA is actively transmitting */
+    if (s_tx_busy) return;
+
     ActuatorFB_t fb = {0};
 
     for (uint8_t i = 0; i < 2; i++) {

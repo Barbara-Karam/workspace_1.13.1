@@ -86,11 +86,11 @@ int main(void)
 
             IMU_Read(&g_imu_data);
 
-//            uint8_t sw_mask = LimitSwitch_ReadAll();
-//            if (sw_mask != 0)
-//            {
-//                Motor_CoastAll();
-//            }
+            uint8_t sw_mask = LimitSwitch_ReadAll();
+            if (sw_mask != 0)
+            {
+                Motor_CoastAll();
+            }
 #ifdef STANDALONE_TEST
             else
             {
@@ -130,7 +130,15 @@ int main(void)
                 }
             }
 #else
+<<<<<<< HEAD
+            /* ── Limit switch guard — re-enable when switches are wired ── */
+            uint8_t sw_mask = LimitSwitch_ReadAll();
+            if (sw_mask != 0) { Motor_CoastAll(); } else
+
+            if (!g_estop_active)
+=======
             else if (!g_estop_active)
+>>>>>>> parent of 3b05561 (commenting the limit switch test)
             {
                 __disable_irq();
                 int16_t pwm0 = g_target_pwm[0];

@@ -6,5 +6,5 @@
 ../Core/Src/comm.c:87:13:Comm_ParseFrame	16
 ../Core/Src/comm.c:142:6:HAL_UARTEx_RxEventCallback	3
 ../Core/Src/comm.c:160:6:Comm_ProcessRx	3
-../Core/Src/comm.c:170:6:Comm_TransmitFeedback	8
-../Core/Src/comm.c:202:6:HAL_UART_ErrorCallback	2
+../Core/Src/comm.c:170:6:Comm_TransmitFeedback	9
+../Core/Src/comm.c:205:6:HAL_UART_ErrorCallback	2

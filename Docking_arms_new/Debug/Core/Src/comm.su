@@ -7,4 +7,4 @@
 ../Core/Src/comm.c:142:6:HAL_UARTEx_RxEventCallback	16	static
 ../Core/Src/comm.c:160:6:Comm_ProcessRx	16	static
 ../Core/Src/comm.c:170:6:Comm_TransmitFeedback	48	static
-../Core/Src/comm.c:202:6:HAL_UART_ErrorCallback	16	static
+../Core/Src/comm.c:205:6:HAL_UART_ErrorCallback	16	static

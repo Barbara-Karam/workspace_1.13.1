@@ -42,14 +42,11 @@ HAL_StatusTypeDef IMU_Init(void)
 
 HAL_StatusTypeDef IMU_Read(IMU_Data_t *data)
 {
-    uint8_t raw[12];
+    uint8_t raw[14]; /* 6 Accel + 2 Temp + 6 Gyro = 14 bytes */
     HAL_StatusTypeDef ret;
 
-    ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_ACCEL_XOUT, 1, raw, 6, IMU_I2C_TIMEOUT_MS);
-    if (ret == HAL_OK)
-    {
-        ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_GYRO_XOUT, 1, &raw[6], 6, IMU_I2C_TIMEOUT_MS);
-    }
+    /* FIX #3: Single burst read starting from ACCEL_XOUT */
+    ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_ACCEL_XOUT, 1, raw, 14, IMU_I2C_TIMEOUT_MS);
 
     if (ret != HAL_OK)
     {
@@ -61,9 +58,12 @@ HAL_StatusTypeDef IMU_Read(IMU_Data_t *data)
     int16_t raw_ax = (int16_t)((raw[0]  << 8) | raw[1]);
     int16_t raw_ay = (int16_t)((raw[2]  << 8) | raw[3]);
     int16_t raw_az = (int16_t)((raw[4]  << 8) | raw[5]);
-    int16_t raw_gx = (int16_t)((raw[6]  << 8) | raw[7]);
-    int16_t raw_gy = (int16_t)((raw[8]  << 8) | raw[9]);
-    int16_t raw_gz = (int16_t)((raw[10] << 8) | raw[11]);
+
+    /* Skip raw[6] and raw[7] (Temperature) */
+
+    int16_t raw_gx = (int16_t)((raw[8]  << 8) | raw[9]);
+    int16_t raw_gy = (int16_t)((raw[10] << 8) | raw[11]);
+    int16_t raw_gz = (int16_t)((raw[12] << 8) | raw[13]);
 
     data->accel_x = (float)raw_ax * IMU_ACCEL_SCALE;
     data->accel_y = (float)raw_ay * IMU_ACCEL_SCALE;
@@ -94,23 +94,17 @@ HAL_StatusTypeDef IMU_Init(void)
 
 HAL_StatusTypeDef IMU_Read(IMU_Data_t *data)
 {
-    uint8_t raw[12];
-    HAL_StatusTypeDef ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_ACCEL_XOUT, 1, raw, 6, IMU_I2C_TIMEOUT_MS);
-    
-    if (ret != HAL_OK) { 
-        data->valid = 0; 
-        g_imu_needs_reset = 1;
-        return ret; 
-    }
-    
-    ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_GYRO_XOUT, 1, &raw[6], 6, IMU_I2C_TIMEOUT_MS);
-    
-    if (ret != HAL_OK) { 
-        data->valid = 0; 
-        g_imu_needs_reset = 1;
-        return ret; 
-    }
+    uint8_t raw[12]; /* Accel and Gyro are contiguous on the ICM (no temp in between) */
 
+    /* FIX #3: Single burst read starting from ACCEL_XOUT */
+    HAL_StatusTypeDef ret = HAL_I2C_Mem_Read(&hi2c1, IMU_I2C_ADDR, IMU_REG_ACCEL_XOUT, 1, raw, 12, IMU_I2C_TIMEOUT_MS);
+    
+    if (ret != HAL_OK) { 
+        data->valid = 0; 
+        g_imu_needs_reset = 1;
+        return ret; 
+    }
+    
     int16_t raw_ax = (int16_t)((raw[0]  << 8) | raw[1]);
     int16_t raw_ay = (int16_t)((raw[2]  << 8) | raw[3]);
     int16_t raw_az = (int16_t)((raw[4]  << 8) | raw[5]);

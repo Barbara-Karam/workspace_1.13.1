@@ -26,6 +26,11 @@ typedef enum {
 } TestPhase_t;
 #endif
 
+/* How long to wait between IMU reinit attempts after a persistent failure.
+ * Without this, a dead sensor causes IMU_Init() to be called every loop
+ * iteration (~50 Hz), burning I2C bus time and delaying motor updates. */
+#define IMU_RESET_COOLDOWN_MS  500u
+
 void SystemClock_Config(void);
 
 extern volatile int16_t  g_target_pwm[2];
@@ -53,24 +58,36 @@ int main(void)
     }
     Comm_Init();
 
-    uint32_t last_loop_ms = HAL_GetTick();
+    uint32_t last_loop_ms      = HAL_GetTick();
+    uint32_t last_imu_reset_ms = 0u;   /* timestamp of last reinit attempt */
 
-#ifdef STANDALONE_TEST
+    #ifdef STANDALONE_TEST
     TestPhase_t test_phase     = TEST_PHASE_FORWARD;
     uint32_t    phase_start_ms = HAL_GetTick();
-#endif
+    #endif
 
     while (1)
     {
         uint32_t now = HAL_GetTick();
 
-        if (g_imu_needs_reset)
+        /* ── IMU recovery ────────────────────────────────────────────────────
+         * Fix #6: gate reinit attempts behind a cooldown period so that a
+         * persistently-dead sensor does not monopolise the I2C bus and starve
+         * the 20 ms control loop.  Without this the flag is re-set inside
+         * IMU_Init() on every iteration (~50 calls/s) which also means
+         * IMU_Read() is never reached and g_imu_data stays stale forever. */
+        if (g_imu_needs_reset &&
+            (now - last_imu_reset_ms) >= IMU_RESET_COOLDOWN_MS)
         {
-            g_imu_needs_reset = 0;
+            g_imu_needs_reset  = 0;
+            last_imu_reset_ms  = now;
+
             HAL_I2C_DeInit(&hi2c1);
             MX_I2C1_Init();
             if (IMU_Init() != HAL_OK)
             {
+                /* Sensor still not responding — mark invalid and wait for
+                 * the next cooldown window before trying again. */
                 g_imu_data.valid  = 0;
                 g_imu_needs_reset = 1;
             }
@@ -82,7 +99,13 @@ int main(void)
 
             IMU_Read(&g_imu_data);
 
+            uint8_t sw_mask = LimitSwitch_ReadAll();
+            if (sw_mask != 0)
+            {
+                Motor_CoastAll();
+            }
 #ifdef STANDALONE_TEST
+            else
             {
                 uint32_t elapsed = now - phase_start_ms;
                 switch (test_phase)
@@ -120,11 +143,7 @@ int main(void)
                 }
             }
 #else
-            /* ── Limit switch guard — re-enable when switches are wired ── */
-            uint8_t sw_mask = LimitSwitch_ReadAll();
-            if (sw_mask != 0) { Motor_CoastAll(); } else
-
-            if (!g_estop_active)
+            else if (!g_estop_active)
             {
                 __disable_irq();
                 int16_t pwm0 = g_target_pwm[0];

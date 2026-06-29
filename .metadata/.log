@@ -12276,6 +12276,7 @@ Caused by: java.nio.channels.UnresolvedAddressException
 	at java.base/java.security.AccessController.doPrivileged(AccessController.java:571)
 	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:212)
 	... 21 more
+<<<<<<< HEAD
 !SESSION 2026-06-27 21:08:44.756 -----------------------------------------------
 eclipse.buildId=Version 1.19.0
 java.version=21.0.3
@@ -12815,3 +12816,5 @@ Command-line arguments:  -os win32 -ws win32 -arch x86_64
 
 !ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2026-06-28 10:29:43.760
 !MESSAGE Started RMI Server, listening on port 41337
+=======
+>>>>>>> parent of 3b05561 (commenting the limit switch test)
