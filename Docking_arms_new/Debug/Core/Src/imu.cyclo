@@ -1,2 +1,2 @@
-../Core/Src/imu.c:19:19:IMU_Init	7
-../Core/Src/imu.c:65:19:IMU_Read	3
+../Core/Src/imu.c:16:19:IMU_Init	7
+../Core/Src/imu.c:43:19:IMU_Read	3

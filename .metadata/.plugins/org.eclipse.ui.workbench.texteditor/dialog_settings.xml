@@ -9,6 +9,7 @@
 		<item value="uint8"/>
 	</list>
 	<list key="searchhistory">
+		<item value="TIM_OSSR_ENABLE"/>
 		<item value="a1"/>
 		<item value="SystemClock_Config"/>
 		<item value="Prescaler ="/>
@@ -23,7 +24,6 @@
 		<item value="GPIO_PIN"/>
 		<item value="uart_state"/>
 		<item value="HAL_TIM_PeriodElapsedCallback"/>
-		<item value="Filter = 0"/>
 	</list>
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
 		<item key="selection" value="uint8"/>

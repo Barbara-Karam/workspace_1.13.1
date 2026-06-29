@@ -64,6 +64,9 @@ int main(void)
     {
         uint32_t now = HAL_GetTick();
 
+        /* Fix #5: reinitialize I2C peripheral AND reprogram IMU registers after bus fault.
+         * Without IMU_Init() the sensor wakes up unconfigured — scale, DLPF, and sample
+         * rate settings are lost, so imu_valid would return 1 with garbage data. */
         if (g_imu_needs_reset)
         {
             g_imu_needs_reset = 0;
@@ -71,6 +74,7 @@ int main(void)
             MX_I2C1_Init();
             if (IMU_Init() != HAL_OK)
             {
+                /* Sensor didn't respond — mark invalid and try again next fault */
                 g_imu_data.valid  = 0;
                 g_imu_needs_reset = 1;
             }
@@ -82,7 +86,13 @@ int main(void)
 
             IMU_Read(&g_imu_data);
 
+//            uint8_t sw_mask = LimitSwitch_ReadAll();
+//            if (sw_mask != 0)
+//            {
+//                Motor_CoastAll();
+//            }
 #ifdef STANDALONE_TEST
+            else
             {
                 uint32_t elapsed = now - phase_start_ms;
                 switch (test_phase)
@@ -120,11 +130,7 @@ int main(void)
                 }
             }
 #else
-            /* ── Limit switch guard — re-enable when switches are wired ── */
-            /* uint8_t sw_mask = LimitSwitch_ReadAll();                     */
-            /* if (sw_mask != 0) { Motor_CoastAll(); } else                 */
-
-            if (!g_estop_active)
+            else if (!g_estop_active)
             {
                 __disable_irq();
                 int16_t pwm0 = g_target_pwm[0];

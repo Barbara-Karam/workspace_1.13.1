@@ -45,35 +45,35 @@ void Motor_Set(uint8_t id, int16_t pwm_signed)
 
     switch (id)
     {
-        /* ── Motor 0: TIM1 CH1 (PA8 = RPWM) / CH1N (PB13 = LPWM) ──── */
-        case 0:
+    case 0:
+        if (dir == MOTOR_DIR_FORWARD) {
+            TIM1->CCER &= ~TIM_CCER_CC1NE;   /* Disable LPWM first */
             TIM1->CCR1 = duty;
-            if (dir == MOTOR_DIR_FORWARD) {
-                TIM1->CCER |=  TIM_CCER_CC1E;    /* Enable RPWM  */
-                TIM1->CCER &= ~TIM_CCER_CC1NE;   /* Disable LPWM */
-            } else if (dir == MOTOR_DIR_REVERSE) {
-                TIM1->CCER &= ~TIM_CCER_CC1E;    /* Disable RPWM */
-                TIM1->CCER |=  TIM_CCER_CC1NE;   /* Enable LPWM  */
-            } else {
-                TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE);
-                TIM1->CCR1 = 0;
-            }
-            break;
+            TIM1->CCER |=  TIM_CCER_CC1E;    /* Then enable RPWM  */
+        } else if (dir == MOTOR_DIR_REVERSE) {
+            TIM1->CCER &= ~TIM_CCER_CC1E;    /* Disable RPWM first */
+            TIM1->CCR1 = duty;
+            TIM1->CCER |=  TIM_CCER_CC1NE;   /* Then enable LPWM  */
+        } else {
+            TIM1->CCER &= ~(TIM_CCER_CC1E | TIM_CCER_CC1NE);
+            TIM1->CCR1 = 0;
+        }
+        break;
 
-        /* ── Motor 1: TIM1 CH2 (PA9 = RPWM) / CH2N (PB14 = LPWM) ──── */
-        case 1:
+    case 1:
+        if (dir == MOTOR_DIR_FORWARD) {
+            TIM1->CCER &= ~TIM_CCER_CC2NE;
             TIM1->CCR2 = duty;
-            if (dir == MOTOR_DIR_FORWARD) {
-                TIM1->CCER |=  TIM_CCER_CC2E;
-                TIM1->CCER &= ~TIM_CCER_CC2NE;
-            } else if (dir == MOTOR_DIR_REVERSE) {
-                TIM1->CCER &= ~TIM_CCER_CC2E;
-                TIM1->CCER |=  TIM_CCER_CC2NE;
-            } else {
-                TIM1->CCER &= ~(TIM_CCER_CC2E | TIM_CCER_CC2NE);
-                TIM1->CCR2 = 0;
-            }
-            break;
+            TIM1->CCER |=  TIM_CCER_CC2E;
+        } else if (dir == MOTOR_DIR_REVERSE) {
+            TIM1->CCER &= ~TIM_CCER_CC2E;
+            TIM1->CCR2 = duty;
+            TIM1->CCER |=  TIM_CCER_CC2NE;
+        } else {
+            TIM1->CCER &= ~(TIM_CCER_CC2E | TIM_CCER_CC2NE);
+            TIM1->CCR2 = 0;
+        }
+        break;
 
         default:
             break;
