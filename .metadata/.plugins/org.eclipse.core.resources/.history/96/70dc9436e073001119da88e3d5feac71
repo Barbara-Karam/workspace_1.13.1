@@ -1,0 +1,122 @@
+#include "comm.h"
+#include "usart.h"
+#include "control_loop.h"
+#include "encoder.h"
+#include "motor_control.h"
+#include <string.h>
+
+static uint8_t rx_buf[COMM_RX_BUF_SIZE];
+static uint8_t tx_buf[COMM_TX_BUF_SIZE];
+
+static volatile uint8_t s_hb_pending = 0;
+
+static uint8_t crc8(const uint8_t *data, uint16_t len)
+{
+    uint8_t crc = 0x00;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) : (crc << 1);
+        }
+    }
+    return crc;
+}
+
+static uint8_t build_frame(uint8_t *buf, uint8_t msg_type, const void *payload, uint8_t payload_len)
+{
+    buf[0] = COMM_SYNC1;
+    buf[1] = COMM_SYNC2;
+    buf[2] = COMM_SYNC3;
+    buf[3] = msg_type;
+    buf[4] = payload_len;
+    if (payload != NULL && payload_len > 0) {
+        memcpy(&buf[5], payload, payload_len);
+    }
+    buf[5 + payload_len] = crc8(&buf[3], 2 + payload_len);
+    return (uint8_t)(6 + payload_len);
+}
+
+static void uart_tx(uint8_t *buf, uint8_t len)
+{
+    HAL_UART_Transmit(&huart2, buf, len, 10);
+}
+
+void Comm_Init(void)
+{
+    huart2.gState = HAL_UART_STATE_READY;
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
+{
+    if (huart->Instance != USART2) return;
+    Comm_RxEventCallback(size);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+}
+
+void Comm_RxEventCallback(uint16_t size)
+{
+    if (size < 6) return;
+
+    if (rx_buf[0] != COMM_SYNC1 || rx_buf[1] != COMM_SYNC2 || rx_buf[2] != COMM_SYNC3) return;
+
+    uint8_t msg_type    = rx_buf[3];
+    uint8_t payload_len = rx_buf[4];
+
+    if ((uint16_t)(6 + payload_len) != size) return;
+
+    uint8_t crc_rx   = rx_buf[5 + payload_len];
+    uint8_t crc_calc = crc8(&rx_buf[3], 2 + payload_len);
+    if (crc_rx != crc_calc) return;
+    uint8_t *payload = &rx_buf[5];
+
+    switch (msg_type) {
+        case MSG_CONTROL_CMD: {
+            if (payload_len != sizeof(ControlCmd_t)) return;
+            ControlCmd_t cmd;
+            memcpy(&cmd, payload, sizeof(ControlCmd_t));
+            for (uint8_t i = 0; i < 4; i++) {
+                ControlLoop_SetTarget(i, (float)cmd.vel_rpm10[i] / 10.0f);
+            }
+            break;
+        }
+        case MSG_HEARTBEAT:
+            s_hb_pending = 1;
+            break;
+        case MSG_ESTOP:
+            Motor_EmergencyStop();
+            ControlLoop_Disable();
+            break;
+        default:
+            break;
+    }
+}
+
+void Comm_ProcessRx(void)
+{
+    if (s_hb_pending) {
+        s_hb_pending = 0;
+        uint8_t len = build_frame(tx_buf, MSG_HEARTBEAT, NULL, 0);
+        uart_tx(tx_buf, len);
+    }
+}
+
+void Comm_TransmitFeedback(void)
+{
+    if (!g_ctrl.feedback_ready) return;
+    g_ctrl.feedback_ready = 0;
+
+    ActuatorFB_t fb;
+    for (uint8_t i = 0; i < 4; i++) {
+        fb.vel_rpm10[i] = (int16_t)(g_ctrl.measured_rpm[i] * 10.0f);
+        fb.enc_count[i] = Encoder_GetCount(i);
+        fb.pwm_out[i]   = (int16_t)g_ctrl.output_pwm[i];
+    }
+    fb.timestamp_ms = HAL_GetTick();
+    fb.sys_status   = 0x00; // imu flag removed
+
+    uint8_t len = build_frame(tx_buf, MSG_ACTUATOR_FB, &fb, sizeof(ActuatorFB_t));
+    uart_tx(tx_buf, len);
+}
