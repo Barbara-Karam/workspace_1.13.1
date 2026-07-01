@@ -1,0 +1,173 @@
+/* ========== comm.c ========== */
+#include "comm.h"
+#include "usart.h"
+#include "control_loop.h"
+#include "encoder.h"
+#include "motor_control.h"
+#include <string.h>
+
+
+static uint8_t rx_buf[COMM_RX_BUF_SIZE];
+static uint8_t tx_buf[COMM_TX_BUF_SIZE];
+static uint8_t hb_buf[8];
+
+static volatile uint8_t s_tx_busy = 0;
+
+static uint8_t crc8(const uint8_t *data, uint16_t len)
+{
+    uint8_t crc = 0x00;
+    for (uint16_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t b = 0; b < 8; b++) {
+            crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) : (crc << 1);
+        }
+    }
+    return crc;
+}
+
+static void uart_tx(uint8_t *buf, uint8_t len)
+{
+    if (s_tx_busy) return;
+    s_tx_busy = 1;
+    if (HAL_UART_Transmit_DMA(&huart2, buf, len) != HAL_OK) {
+        s_tx_busy = 0;
+    }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) { s_tx_busy = 0; }
+}
+
+void Comm_Init(void)
+{
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+}
+
+static void Comm_ParseFrame(uint8_t *buf, uint16_t size)
+{
+    // Frame format: [SYNC1][SYNC2][SYNC3][TYPE][LEN][PAYLOAD...][CRC]
+    // Minimum frame size: 3 (sync) + 1 (type) + 1 (len) + 1 (crc) = 6 bytes
+    if (size < 6) return;
+
+    uint16_t idx = 0;
+
+    // Sliding window search for the 3-byte sync pattern
+    while (idx <= size - 6) {
+        if (buf[idx] == COMM_SYNC1 && buf[idx+1] == COMM_SYNC2 && buf[idx+2] == COMM_SYNC3) {
+            uint8_t msg_type    = buf[idx+3];
+            uint8_t payload_len = buf[idx+4];
+
+            // Check if the remaining buffer holds the declared payload + CRC
+            if (idx + 6 + payload_len > size) {
+                // Incomplete frame, break out (will be caught in the next DMA transfer if ring buffered)
+                break;
+            }
+
+            uint8_t crc_rx   = buf[idx + 5 + payload_len];
+            uint8_t crc_calc = crc8(&buf[idx+3], 2 + payload_len); // CRC over TYPE, LEN, and PAYLOAD
+
+            if (crc_rx != crc_calc) {
+                idx++; // CRC failed, shift window by 1 and keep searching
+                continue;
+            }
+
+            uint8_t *payload = &buf[idx + 5];
+
+            switch (msg_type) {
+                case MSG_CONTROL_CMD: {
+                    if (payload_len != sizeof(ControlCmd_t)) break;
+                    ControlCmd_t cmd;
+                    memcpy(&cmd, payload, sizeof(ControlCmd_t));
+                    for (uint8_t i = 0; i < 4; i++) {
+                        float rpm = (float)cmd.vel_rpm10[i] / 10.0f;
+                        ControlLoop_SetTarget(i, rpm);
+                    }
+                    break;
+                }
+                case MSG_HEARTBEAT: {
+                    hb_buf[0] = COMM_SYNC1;
+                    hb_buf[1] = COMM_SYNC2;
+                    hb_buf[2] = COMM_SYNC3;
+                    hb_buf[3] = MSG_HEARTBEAT;
+                    hb_buf[4] = 0;
+                    hb_buf[5] = crc8(&hb_buf[3], 2);
+                    uart_tx(hb_buf, 6);
+                    break;
+                }
+                case MSG_ESTOP:
+                    Motor_EmergencyStop();
+                    ControlLoop_Disable();
+                    break;
+            }
+            // Skip index past the currently parsed frame
+            idx += 6 + payload_len;
+        } else {
+            idx++; // Move window by 1
+        }
+    }
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
+{
+    if (huart->Instance != USART2) return;
+    if (size > COMM_RX_BUF_SIZE) size = COMM_RX_BUF_SIZE;
+
+    static uint8_t local_buf[COMM_RX_BUF_SIZE];
+    memcpy(local_buf, rx_buf, size);
+
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+    __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+
+    Comm_ParseFrame(local_buf, size);
+}
+
+void Comm_ProcessRx(void) { }
+
+void Comm_TransmitFeedback(void)
+{
+    if (s_tx_busy) return;
+
+    // Atomically read and clear the flag
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    uint8_t ready = g_ctrl.feedback_ready;
+    if (ready) g_ctrl.feedback_ready = 0;
+    __set_PRIMASK(primask);
+
+    if (!ready) return;
+
+
+    ActuatorFB_t fb;
+    for (uint8_t i = 0; i < 4; i++) {
+        fb.vel_rpm10[i] = (int16_t)(g_ctrl.measured_rpm[i] * 10.0f);
+        fb.enc_count[i] = Encoder_GetCount(i);
+        fb.pwm_out[i]   = (int16_t)g_ctrl.output_pwm[i];
+    }
+    fb.timestamp_ms = HAL_GetTick();
+    fb.sys_status   = 0;
+
+    uint8_t payload_len = sizeof(ActuatorFB_t);
+    if (payload_len > COMM_MAX_PAYLOAD) return;
+
+    tx_buf[0] = COMM_SYNC1;
+    tx_buf[1] = COMM_SYNC2;
+    tx_buf[2] = COMM_SYNC3;
+    tx_buf[3] = MSG_ACTUATOR_FB;
+    tx_buf[4] = payload_len;
+    memcpy(&tx_buf[5], &fb, payload_len);
+    tx_buf[5 + payload_len] = crc8(&tx_buf[3], 2 + payload_len);
+
+    uart_tx(tx_buf, (uint8_t)(6 + payload_len));
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART2) {
+        s_tx_busy = 0;  // FIX: Clear the busy flag so TX can recover
+        HAL_UART_AbortReceive(huart);
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rx_buf, COMM_RX_BUF_SIZE);
+        __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+    }
+}

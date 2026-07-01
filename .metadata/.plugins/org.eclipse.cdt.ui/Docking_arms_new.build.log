@@ -1,18 +1,10 @@
-16:42:14 **** Incremental Build of configuration Debug for project Docking_arms_new ****
+03:29:08 **** Incremental Build of configuration Debug for project Docking_arms_new ****
 make -j12 all 
-arm-none-eabi-gcc "../Core/Src/motor_control.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/motor_control.d" -MT"Core/Src/motor_control.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/motor_control.o"
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc -o "Docking_arms_new.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\brbar\STM32CubeIDE\workspace_1.13.1\Docking_arms_new\STM32F401RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Docking_arms_new.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: Docking_arms_new.elf
- 
 arm-none-eabi-size  Docking_arms_new.elf 
-arm-none-eabi-objdump -h -S Docking_arms_new.elf  > "Docking_arms_new.list"
    text	   data	    bss	    dec	    hex	filename
   27204	     12	   2268	  29484	   732c	Docking_arms_new.elf
 Finished building: default.size.stdout
  
-Finished building: Docking_arms_new.list
- 
 
-16:42:16 Build Finished. 0 errors, 0 warnings. (took 1s.453ms)
+03:29:08 Build Finished. 0 errors, 0 warnings. (took 426ms)
 

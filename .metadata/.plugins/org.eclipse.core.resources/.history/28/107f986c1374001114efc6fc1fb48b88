@@ -1,0 +1,75 @@
+/* ========== control_loop.c ========== */
+#include "control_loop.h"
+#include "encoder.h"
+#include "motor_control.h"
+
+volatile ControlLoop_t g_ctrl = {0};
+
+void ControlLoop_Init(void)
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        g_ctrl.setpoint_rpm[i] = 0.0f;
+        g_ctrl.measured_rpm[i] = 0.0f;
+        g_ctrl.output_pwm[i]   = 0.0f;
+        PID_Init((PID_t*)&g_ctrl.pid[i],
+                 PID_KP, PID_KI, PID_KD,
+                 PID_OUT_LIMIT, PID_INT_LIMIT);
+    }
+    g_ctrl.tick_count     = 0;
+    g_ctrl.enabled        = 0;
+    g_ctrl.feedback_ready = 0;
+}
+
+void ControlLoop_Run(void)
+{
+    Encoder_Update();
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        g_ctrl.measured_rpm[i] = Encoder_GetRPM(i);
+    }
+
+    if (g_ctrl.enabled) {
+        for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+            g_ctrl.output_pwm[i] = PID_Update(
+                (PID_t*)&g_ctrl.pid[i],
+                g_ctrl.setpoint_rpm[i],
+                g_ctrl.measured_rpm[i],
+                CTRL_DT
+            );
+            Motor_Set(i, (int16_t)g_ctrl.output_pwm[i]);
+        }
+    } else {
+        Motor_CoastAll();
+    }
+
+    g_ctrl.feedback_ready = 1;
+    g_ctrl.tick_count++;
+}
+
+void ControlLoop_SetTarget(uint8_t id, float rpm)
+{
+    if (id >= CTRL_MOTOR_COUNT) return;
+    if (rpm >  CTRL_RPM_MAX) rpm =  CTRL_RPM_MAX;
+    if (rpm < -CTRL_RPM_MAX) rpm = -CTRL_RPM_MAX;
+    g_ctrl.setpoint_rpm[id] = rpm;
+}
+
+void ControlLoop_SetAllTargets(float rpm[CTRL_MOTOR_COUNT])
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        ControlLoop_SetTarget(i, rpm[i]);
+    }
+}
+
+void ControlLoop_Enable(void)
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        PID_Reset((PID_t*)&g_ctrl.pid[i]);
+    }
+    g_ctrl.enabled = 1;
+}
+
+void ControlLoop_Disable(void)
+{
+    g_ctrl.enabled = 0;
+    Motor_CoastAll();
+}

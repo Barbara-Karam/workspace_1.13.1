@@ -1,0 +1,71 @@
+#ifndef CONTROL_LOOP_H
+#define CONTROL_LOOP_H
+
+#include "pid.h"
+#include <stdint.h>
+
+#define CTRL_MOTOR_COUNT    4
+#define CTRL_DT             0.01f
+#define CTRL_RPM_MAX        150.0f
+#define CTRL_PWM_MAX        4199.0f
+
+#define PID_KP              2.0f
+#define PID_KI              8.0f
+#define PID_KD              0.05f
+#define PID_OUT_LIMIT       CTRL_PWM_MAX
+#define PID_INT_LIMIT       2000.0f
+
+/* ── Internal ISR-side state ──────────────────────────────────────────────
+   Written exclusively from ControlLoop_Run() (TIM9 ISR, priority 3).
+   Do NOT read these fields from mainline code — use ControlSnapshot_t instead.
+   volatile is retained to prevent the compiler from caching registers across
+   the ISR boundary, but volatile alone does NOT make multi-byte reads atomic.  */
+typedef struct {
+    float   setpoint_rpm[CTRL_MOTOR_COUNT];  /* written by mainline (under critical section) */
+    float   measured_rpm[CTRL_MOTOR_COUNT];  /* written by ISR only */
+    float   output_pwm[CTRL_MOTOR_COUNT];    /* written by ISR only */
+    PID_t   pid[CTRL_MOTOR_COUNT];
+    uint32_t tick_count;
+    uint8_t  enabled;
+    uint8_t  estop_latched;   /* NEW: set by MSG_ESTOP via ControlLoop_EmergencyLatch().
+                                  Unlike the comm watchdog, this does NOT auto-clear when
+                                  comms recover — it requires deliberate action (or reset),
+                                  matching the intent of an emergency stop. */
+    uint8_t  feedback_ready;   /* set by ISR, cleared by mainline under critical section */
+} ControlLoop_t;
+
+extern volatile ControlLoop_t g_ctrl;
+
+/* ── Snapshot: safe mainline view of the last completed control tick ────────
+   FIX #6: multi-byte float fields (measured_rpm, output_pwm) cannot be read
+   atomically from a struct that is concurrently written by the ISR.  Mainline
+   code must call ControlLoop_GetSnapshot() which copies the data inside a
+   critical section.  Comm_TransmitFeedback() and any other non-ISR code that
+   needs motor data must use this struct, never g_ctrl directly.             */
+typedef struct {
+    float    measured_rpm[CTRL_MOTOR_COUNT];
+    float    output_pwm[CTRL_MOTOR_COUNT];
+    uint32_t tick_count;
+} ControlSnapshot_t;
+
+/* Copy the last complete set of feedback fields atomically.
+   Returns 1 if new data was available (feedback_ready was set), 0 otherwise.
+   Clears feedback_ready on success so each snapshot is consumed once.       */
+uint8_t ControlLoop_GetSnapshot(ControlSnapshot_t *out);
+
+/* ── API ── */
+void ControlLoop_Init(void);
+void ControlLoop_Run(void);   /* call from TIM9 ISR only */
+void ControlLoop_SetTarget(uint8_t id, float rpm);
+void ControlLoop_SetAllTargets(float rpm[CTRL_MOTOR_COUNT]);
+void ControlLoop_Enable(void);
+void ControlLoop_Disable(void);
+
+/* NEW: latch an emergency stop. Forces enabled=0 and safe motor state every
+   tick from within ControlLoop_Run(), and — critically — does NOT get
+   cleared by the comm watchdog logic recovering. Only a reset (or a future
+   explicit unlatch API, not currently exposed) clears it. */
+void    ControlLoop_EmergencyLatch(void);
+uint8_t ControlLoop_IsEstopLatched(void);
+
+#endif /* CONTROL_LOOP_H */
