@@ -1,4 +1,4 @@
-07:31:41 **** Incremental Build of configuration Debug for project yarab ****
+17:39:01 **** Incremental Build of configuration Debug for project yarab ****
 make -j12 all 
 arm-none-eabi-gcc "../Core/Src/comm.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/comm.d" -MT"Core/Src/comm.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/comm.o"
 arm-none-eabi-gcc "../Core/Src/control_loop.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32F401xC -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/control_loop.d" -MT"Core/Src/control_loop.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/control_loop.o"
@@ -11,7 +11,7 @@ arm-none-eabi-size  yarab.elf
 arm-none-eabi-objdump -h -S yarab.elf  > "yarab.list"
 arm-none-eabi-objcopy  -O ihex yarab.elf  "yarab.hex"
    text	   data	    bss	    dec	    hex	filename
-  26352	     28	   2916	  29296	   7270	yarab.elf
+  26576	     28	   2916	  29520	   7350	yarab.elf
 arm-none-eabi-objcopy  -O binary yarab.elf  "yarab.bin"
 Finished building: default.size.stdout
  
@@ -22,5 +22,5 @@ Finished building: yarab.bin
 Finished building: yarab.list
  
 
-07:31:42 Build Finished. 0 errors, 0 warnings. (took 1s.403ms)
+17:39:02 Build Finished. 0 errors, 0 warnings. (took 1s.341ms)
 
