@@ -1,0 +1,156 @@
+/* ========== control_loop.c ========== */
+#include "control_loop.h"
+#include "encoder.h"
+#include "motor_control.h"
+#include "stm32f4xx_hal.h"   /* __get_PRIMASK / __disable_irq / __set_PRIMASK */
+#include <math.h>            /* fabsf */
+
+volatile ControlLoop_t g_ctrl = {0};
+
+void ControlLoop_Init(void)
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        g_ctrl.setpoint_rpm[i]    = 0.0f;
+        g_ctrl.measured_rpm[i]    = 0.0f;
+        g_ctrl.output_pwm[i]      = 0.0f;
+        g_ctrl.zero_tick_count[i] = 0;
+        PID_Init((PID_t*)&g_ctrl.pid[i],
+                 PID_KP, PID_KI, PID_KD,
+                 PID_OUT_LIMIT, PID_INT_LIMIT);
+    }
+    g_ctrl.tick_count     = 0;
+    g_ctrl.enabled        = 0;
+    g_ctrl.feedback_ready = 0;
+}
+
+/* Called from TIM9 ISR at 100 Hz â€” no HAL or blocking calls here. */
+void ControlLoop_Run(void)
+{
+    Encoder_Update();
+
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        g_ctrl.measured_rpm[i] = Encoder_GetRPM(i);
+    }
+
+    if (g_ctrl.enabled) {
+        for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+
+            float output = PID_Update(
+                (PID_t*)&g_ctrl.pid[i],
+                g_ctrl.setpoint_rpm[i],
+                g_ctrl.measured_rpm[i],
+                CTRL_DT
+            );
+
+            /* â”€â”€ Zero-target stall cutout (backstop) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+               If commanded to 0 and the encoder has read within noise-band
+               of 0 for CTRL_ZERO_STALL_TICKS consecutive ticks, the PID
+               error has effectively been ~0 for a while and its integrator
+               may be sitting on stale windup that PID_Update() alone won't
+               unwind fast enough (or at all, if error stays exactly 0).
+               Force the output to zero and clear that motor's PID state
+               outright so a frozen integrator can never keep driving the
+               motor after a stop command. This is independent of, and a
+               safety net for, the immediate reset done in
+               ControlLoop_SetTarget() below.                                */
+            if (g_ctrl.setpoint_rpm[i] == 0.0f &&
+                fabsf(g_ctrl.measured_rpm[i]) < CTRL_ZERO_RPM_EPS)
+            {
+                if (g_ctrl.zero_tick_count[i] < CTRL_ZERO_STALL_TICKS) {
+                    g_ctrl.zero_tick_count[i]++;
+                }
+                if (g_ctrl.zero_tick_count[i] >= CTRL_ZERO_STALL_TICKS) {
+                    output = 0.0f;
+                    PID_Reset((PID_t*)&g_ctrl.pid[i]);
+                }
+            } else {
+                g_ctrl.zero_tick_count[i] = 0;
+            }
+
+            g_ctrl.output_pwm[i] = output;
+            Motor_Set(i, (int16_t)output);
+        }
+    } else {
+        Motor_CoastAll();
+    }
+
+    g_ctrl.feedback_ready = 1;
+    g_ctrl.tick_count++;
+}
+
+/* FIX #6: Atomically copy all multi-byte feedback fields in a single critical
+   section.  'volatile' on g_ctrl prevents compiler reordering but does not
+   prevent tearing of 4-byte floats on Cortex-M4 (LDR is not atomic relative
+   to an ISR that writes the same location mid-instruction-stream).
+   Returns 1 if fresh data was consumed, 0 if no new tick had fired.          */
+uint8_t ControlLoop_GetSnapshot(ControlSnapshot_t *out)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    uint8_t ready = g_ctrl.feedback_ready;
+    if (ready) {
+        for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+            out->measured_rpm[i] = g_ctrl.measured_rpm[i];
+            out->output_pwm[i]   = g_ctrl.output_pwm[i];
+        }
+        out->tick_count       = g_ctrl.tick_count;
+        g_ctrl.feedback_ready = 0;   /* consume â€” exactly one clear, here only */
+    }
+
+    __set_PRIMASK(primask);
+    return ready;
+}
+
+void ControlLoop_SetTarget(uint8_t id, float rpm)
+{
+    if (id >= CTRL_MOTOR_COUNT) return;
+    if (rpm >  CTRL_RPM_MAX) rpm =  CTRL_RPM_MAX;
+    if (rpm < -CTRL_RPM_MAX) rpm = -CTRL_RPM_MAX;
+
+    /* setpoint_rpm is a 4-byte float and a single aligned 32-bit store on
+       Cortex-M4 is naturally atomic, so no critical section is needed for
+       that write alone. */
+    g_ctrl.setpoint_rpm[id] = rpm;
+
+    /* Stop command: immediately kill any residual integrator windup so the
+       motor starts decelerating right away instead of waiting for the
+       stall-cutout in ControlLoop_Run() to trip CTRL_ZERO_STALL_TICKS
+       ticks later. This is a genuine read-modify-write of pid[id] (kp/ki/kd
+       preserved, integrator/prev_measurement/output zeroed), and this
+       function is called from the UART RX ISR (USART2, priority 1), which
+       has HIGHER priority than TIM9 (priority 3) and can therefore preempt
+       ControlLoop_Run() mid-update of the very same pid[id] struct. Unlike
+       the single-float store above, this is not safely atomic on its own,
+       so it's wrapped in the same critical-section pattern used by
+       ControlLoop_GetSnapshot(). */
+    if (rpm == 0.0f) {
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        PID_Reset((PID_t*)&g_ctrl.pid[id]);
+        g_ctrl.zero_tick_count[id] = 0;
+        __set_PRIMASK(primask);
+    }
+}
+
+void ControlLoop_SetAllTargets(float rpm[CTRL_MOTOR_COUNT])
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        ControlLoop_SetTarget(i, rpm[i]);
+    }
+}
+
+void ControlLoop_Enable(void)
+{
+    for (uint8_t i = 0; i < CTRL_MOTOR_COUNT; i++) {
+        PID_Reset((PID_t*)&g_ctrl.pid[i]);
+        g_ctrl.zero_tick_count[i] = 0;
+    }
+    g_ctrl.enabled = 1;
+}
+
+void ControlLoop_Disable(void)
+{
+    g_ctrl.enabled = 0;
+    Motor_CoastAll();
+}

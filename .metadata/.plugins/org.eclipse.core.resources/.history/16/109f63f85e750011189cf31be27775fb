@@ -1,0 +1,96 @@
+#ifndef CONTROL_LOOP_H
+#define CONTROL_LOOP_H
+
+#include "pid.h"
+#include <stdint.h>
+
+#define CTRL_MOTOR_COUNT    4
+#define CTRL_DT             0.01f
+#define CTRL_RPM_MAX        150.0f
+#define CTRL_PWM_MAX        4199.0f
+
+#define PID_KP              2.0f
+#define PID_KI              8.0f
+#define PID_KD              0.05f
+#define PID_OUT_LIMIT       CTRL_PWM_MAX
+
+/* REDUCED from 2000.0f: at KI=8.0 the old limit let the integrator alone
+   carry a wound-up 2000/4199 ~ 48% duty cycle even after error returned to
+   zero, which is what allowed the motor to sit there driving after a
+   "target = 0" command. 800 still gives enough authority to hold against
+   steady-state load/friction but caps how much residual torque a stale
+   integrator can hide. Retune if motors can't hold position/speed under
+   real load with this limit. */
+#define PID_INT_LIMIT       800.0f
+
+/* â”€â”€ Zero-target stall cutout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Encoder quantization at 100 Hz / 1320 CPR means one count of noise reads
+   as ~4.5 RPM. If measured_rpm lands inside that noise band while setpoint
+   is exactly 0, PID error is ~0 and the integrator stops updating (does not
+   unwind) -- it just freezes at whatever residual value it held, and that
+   residual can still be above PWM_DEADBAND, driving the motor forever.
+   This is a hard backstop independent of the PID math: once a motor has
+   been commanded to 0 AND reads within CTRL_ZERO_RPM_EPS for
+   CTRL_ZERO_STALL_TICKS consecutive control ticks, output is forced to
+   zero and that motor's PID state is reset, regardless of what the
+   integrator computed.                                                    */
+#define CTRL_ZERO_RPM_EPS       5.0f   /* > 1 encoder-count of RPM noise */
+#define CTRL_ZERO_STALL_TICKS   5u     /* 5 ticks @ 100Hz = 50ms */
+
+/* â”€â”€ Internal ISR-side state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+   Written exclusively from ControlLoop_Run() (TIM9 ISR, priority 3), except
+   setpoint_rpm which is also written by ControlLoop_SetTarget() (called
+   from the UART RX ISR, priority 1 -- higher priority, can preempt TIM9).
+   Do NOT read these fields from mainline code â€” use ControlSnapshot_t instead.
+   volatile is retained to prevent the compiler from caching registers across
+   the ISR boundary, but volatile alone does NOT make multi-byte reads atomic.  */
+typedef struct {
+    float   setpoint_rpm[CTRL_MOTOR_COUNT];  /* written by mainline/UART ISR (under critical section for the PID_Reset path) */
+    float   measured_rpm[CTRL_MOTOR_COUNT];  /* written by ISR only */
+    float   output_pwm[CTRL_MOTOR_COUNT];    /* written by ISR only */
+    PID_t   pid[CTRL_MOTOR_COUNT];
+    uint8_t zero_tick_count[CTRL_MOTOR_COUNT]; /* consecutive ticks near-zero w/ zero setpoint; ISR-only */
+    uint32_t tick_count;
+    uint8_t  enabled;
+    uint8_t  estop_latched;   /* NEW: set by MSG_ESTOP via ControlLoop_EmergencyLatch().
+                                  Unlike the comm watchdog, this does NOT auto-clear when
+                                  comms recover â€” it requires deliberate action (or reset),
+                                  matching the intent of an emergency stop. */
+    uint8_t  feedback_ready;   /* set by ISR, cleared by mainline under critical section */
+} ControlLoop_t;
+
+extern volatile ControlLoop_t g_ctrl;
+
+/* â”€â”€ Snapshot: safe mainline view of the last completed control tick â”€â”€â”€â”€â”€â”€â”€â”€
+   FIX #6: multi-byte float fields (measured_rpm, output_pwm) cannot be read
+   atomically from a struct that is concurrently written by the ISR.  Mainline
+   code must call ControlLoop_GetSnapshot() which copies the data inside a
+   critical section.  Comm_TransmitFeedback() and any other non-ISR code that
+   needs motor data must use this struct, never g_ctrl directly.             */
+typedef struct {
+    float    measured_rpm[CTRL_MOTOR_COUNT];
+    float    output_pwm[CTRL_MOTOR_COUNT];
+    uint32_t tick_count;
+} ControlSnapshot_t;
+
+/* Copy the last complete set of feedback fields atomically.
+   Returns 1 if new data was available (feedback_ready was set), 0 otherwise.
+   Clears feedback_ready on success so each snapshot is consumed once.       */
+uint8_t ControlLoop_GetSnapshot(ControlSnapshot_t *out);
+
+/* â”€â”€ API â”€â”€ */
+void ControlLoop_Init(void);
+void ControlLoop_Run(void);   /* call from TIM9 ISR only */
+void ControlLoop_SetTarget(uint8_t id, float rpm);
+void ControlLoop_SetAllTargets(float rpm[CTRL_MOTOR_COUNT]);
+void ControlLoop_Enable(void);
+void ControlLoop_Disable(void);
+
+/* NEW: latch an emergency stop. Forces enabled=0 and safe motor state every
+   tick from within ControlLoop_Run(), and â€” critically â€” does NOT get
+   cleared by the comm watchdog logic recovering. Only a reset (or a future
+   explicit unlatch API, not currently exposed) clears it. */
+void    ControlLoop_EmergencyLatch(void);
+uint8_t ControlLoop_IsEstopLatched(void);
+
+#endif /* CONTROL_LOOP_H */
